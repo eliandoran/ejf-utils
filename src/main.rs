@@ -48,7 +48,8 @@ fn render_single_character(face: &Face, ch: char) {
     let img = get_pixels(glyph.bitmap(), x, y);    
 
     // Save the output to png.
-    img.save_with_format("output.png", ImageFormat::Png).unwrap();
+    let filename = format!("output/{}.png", ch);
+    img.save_with_format(filename, ImageFormat::Png).unwrap();
 
     let config = Config {
         absolute_offset: false,
