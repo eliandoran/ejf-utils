@@ -6,6 +6,8 @@ const FONT_PATH: &'static str = "./fonts/Roboto/Roboto-Light.ttf";
 const FACE_CHAR_WIDTH: isize = 8 * 64;
 const FACE_HORIZONTAL_RESOLUTION: u32 = 100;
 
+const SKIP_CONTROL_CHARACTERS: bool = true;
+
 const OUTPUT_WIDTH: u32 = 32;
 const OUTPUT_HEIGHT: u32 = 24;
 
@@ -73,7 +75,13 @@ fn main() {
     face.set_char_size(FACE_CHAR_WIDTH, 0, FACE_HORIZONTAL_RESOLUTION, 0)
         .expect("Unable to set the character size.");
 
-    for ch in (0 as u8)..(255 as u8) {
+    for code in (0 as u8)..(255 as u8) {
+        let ch = code as char;
+
+        if SKIP_CONTROL_CHARACTERS && ch.is_control() {
+            continue;
+        }
+
         render_single_character(&face, ch as char);
     }    
 }
