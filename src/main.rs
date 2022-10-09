@@ -60,7 +60,7 @@ fn render_single_character(face: &Face, ch: char, image_height: u32, max_ascent:
     img.to_rgb8()
 }
 
-fn write_header(chars: &[char]) -> Vec<u8> {
+fn write_header(chars: &[char], height: u32) -> Vec<u8> {
     let mut writer = Writer::new(Vec::new());
     writer.create_element("FontGenerator")
         .write_inner_content(|writer| {
@@ -72,7 +72,7 @@ fn write_header(chars: &[char]) -> Vec<u8> {
             writer.create_element("FontProperties")
                 .with_attribute(("Baseline", "13"))
                 .with_attribute(("Filter", "u"))
-                .with_attribute(("Height", "26"))
+                .with_attribute(("Height", height.to_string().as_str()))
                 .with_attribute(("Name", "Foo"))
                 .with_attribute(("Space", "5"))
                 .with_attribute(("Style", "pu"))
@@ -172,7 +172,7 @@ fn main() {
     }    
 
     // Write the header
-    let header = write_header(&vec);
+    let header = write_header(&vec, image_height);
     zip.start_file("Header", zip_options).unwrap();
     zip.write(&header).unwrap();
     zip.finish().unwrap();
