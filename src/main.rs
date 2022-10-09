@@ -1,5 +1,5 @@
 use freetype::{Library, Face, face::LoadFlag, Bitmap};
-use image::{DynamicImage, ImageBuffer};
+use image::{DynamicImage, ImageBuffer, ImageFormat};
 use viuer::Config;
 
 const FONT_PATH: &'static str = "./fonts/Roboto/Roboto-Light.ttf";
@@ -58,6 +58,9 @@ fn main() {
 
     // Get the pixels of that single character.
     let img = get_pixels(glyph.bitmap(), x, y);    
+
+    // Save the output to png.
+    img.save_with_format("output.png", ImageFormat::Png).unwrap();
 
     let config = Config {
         absolute_offset: false,
