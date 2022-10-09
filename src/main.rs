@@ -1,5 +1,6 @@
 use freetype::{Library, Face, face::LoadFlag, Bitmap};
 use image::{DynamicImage, ImageBuffer, ImageFormat};
+use indicatif::ProgressBar;
 use viuer::Config;
 use core::cmp::max;
 
@@ -38,10 +39,6 @@ fn render_single_character(face: &Face, ch: char, image_height: u32, max_ascent:
         .expect("Unable to load one of the characters for rendering.");
 
     let glyph = face.glyph();
-    let x = glyph.bitmap_left() as i32;
-    let y = glyph.bitmap_top() as i32;
-    
-    println!("Bitmap position: char='{}', x={}, y={}", ch, x, y);
 
     // Get the pixels of that single character.
     let offset_y = max_ascent as i32 - (glyph.bitmap_top() as i32);
@@ -90,12 +87,13 @@ fn main() {
         }
     }
 
-    println!("{}", max_descent);
     let image_height = (max_ascent as i32 + max_descent) as u32;
 
     println!("Font family: {}", face.family_name().unwrap());
+    println!("The characters will have a height of: {}px.", image_height);
 
     // Render the characters.
+    let bar = ProgressBar::new(256);
     for code in (0 as u8)..(255 as u8) {
         let ch = code as char;
 
@@ -104,6 +102,7 @@ fn main() {
         }
 
         render_single_character(&face, ch as char, image_height, max_ascent);
+        bar.inc(1);
     }    
 }
 
