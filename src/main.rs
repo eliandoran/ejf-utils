@@ -61,6 +61,48 @@ fn render_single_character(face: &Face, ch: char, image_height: u32, max_ascent:
     }
 }
 
+fn write_header(chars: &[char]) {
+    let file = File::create("output/Header").unwrap();
+    let mut writer = Writer::new(file);
+    writer.create_element("FontGenerator")
+        .write_inner_content(|writer| {
+            writer.create_element("Informations")
+                .with_attribute(("Vendor", "IS2T"))
+                .with_attribute(("Version", "0.8"))
+                .write_empty()?;
+
+            writer.create_element("FontProperties")
+                .with_attribute(("Baseline", "13"))
+                .with_attribute(("Filter", "u"))
+                .with_attribute(("Height", "26"))
+                .with_attribute(("Name", "Foo"))
+                .with_attribute(("Space", "5"))
+                .with_attribute(("Style", "pu"))
+                .with_attribute(("Width", "-1"))
+                .write_inner_content(|writer| {
+                    writer.create_element("Identifier")
+                        .with_attribute(("Value", "34"))
+                        .write_empty()?;
+                    Ok(())
+                })?;
+
+            writer.create_element("FontCharacterProperties")
+                .write_inner_content(|writer| {
+                    for ch in chars.iter() {
+                        let index = format!("0x{:x}", (*ch) as u8); 
+                        writer.create_element("Character")
+                            .with_attribute(("Index", index.as_str()))
+                            .with_attribute(("LeftSpace", "0"))
+                            .with_attribute(("RightSpace", "0"))
+                            .write_empty()?;
+                    }
+
+                    Ok(())
+                })?;
+            Ok(())
+        }).unwrap();
+}
+
 fn main() {
     // Try to open the font.
     let library = Library::init().unwrap();
@@ -94,38 +136,10 @@ fn main() {
     println!("Font family: {}", face.family_name().unwrap());
     println!("The characters will have a height of: {}px.", image_height);
 
-    // Open the XML manifest for writing
-    let file = File::create("output/Header").unwrap();
-    let mut writer = Writer::new(file);
-    writer.create_element("FontGenerator")
-        .write_inner_content(|writer| {
-            writer.create_element("Informations")
-                .with_attribute(("Vendor", "IS2T"))
-                .with_attribute(("Version", "0.8"))
-                .write_empty()
-                .unwrap();
-
-            writer.create_element("FontProperties")
-                .with_attribute(("Baseline", "13"))
-                .with_attribute(("Filter", "u"))
-                .with_attribute(("Height", "26"))
-                .with_attribute(("Name", "Foo"))
-                .with_attribute(("Space", "5"))
-                .with_attribute(("Style", "pu"))
-                .with_attribute(("Width", "-1"))
-                .write_inner_content(|writer| {
-                    writer.create_element("Identifier")
-                        .with_attribute(("Value", "34"))
-                        .write_empty()
-                        .unwrap();
-                    Ok(())
-                }).unwrap();
-
-            Ok(())
-        }).unwrap();
-
     // Render the characters.
     let bar = ProgressBar::new(256);
+    let mut vec = Vec::<char>::new();
+    
     for code in (0 as u8)..(255 as u8) {
         let ch = code as char;
 
@@ -133,8 +147,11 @@ fn main() {
             continue;
         }
 
-        render_single_character(&face, ch as char, image_height, max_ascent);
+        render_single_character(&face, ch as char, image_height, max_ascent);        
+        vec.push(ch);
         bar.inc(1);
     }    
+
+    write_header(&vec);
 }
 
