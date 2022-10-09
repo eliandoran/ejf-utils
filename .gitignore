@@ -1,3 +1,6 @@
 /target
 /fonts
 *.png
+
+/output
+!.gitkeep

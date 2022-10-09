@@ -1,11 +1,13 @@
 use freetype::{Library, Face, face::LoadFlag, Bitmap};
 use image::{DynamicImage, ImageBuffer, ImageFormat};
 use indicatif::ProgressBar;
+use quick_xml::Writer;
 use viuer::Config;
 use core::cmp::max;
+use std::fs::File;
 
 const FONT_PATH: &'static str = "./fonts/Roboto/Roboto-Light.ttf";
-const FACE_CHAR_WIDTH: isize = 8 * 64;
+const FACE_CHAR_WIDTH: isize = 25 * 64;
 const FACE_HORIZONTAL_RESOLUTION: u32 = 100;
 
 const SKIP_CONTROL_CHARACTERS: bool = true;
@@ -91,6 +93,36 @@ fn main() {
 
     println!("Font family: {}", face.family_name().unwrap());
     println!("The characters will have a height of: {}px.", image_height);
+
+    // Open the XML manifest for writing
+    let file = File::create("output/Header").unwrap();
+    let mut writer = Writer::new(file);
+    writer.create_element("FontGenerator")
+        .write_inner_content(|writer| {
+            writer.create_element("Informations")
+                .with_attribute(("Vendor", "IS2T"))
+                .with_attribute(("Version", "0.8"))
+                .write_empty()
+                .unwrap();
+
+            writer.create_element("FontProperties")
+                .with_attribute(("Baseline", "13"))
+                .with_attribute(("Filter", "u"))
+                .with_attribute(("Height", "26"))
+                .with_attribute(("Name", "Foo"))
+                .with_attribute(("Space", "5"))
+                .with_attribute(("Style", "pu"))
+                .with_attribute(("Width", "-1"))
+                .write_inner_content(|writer| {
+                    writer.create_element("Identifier")
+                        .with_attribute(("Value", "34"))
+                        .write_empty()
+                        .unwrap();
+                    Ok(())
+                }).unwrap();
+
+            Ok(())
+        }).unwrap();
 
     // Render the characters.
     let bar = ProgressBar::new(256);
