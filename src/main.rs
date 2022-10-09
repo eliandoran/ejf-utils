@@ -1,6 +1,6 @@
 use binstall_zip::{ZipWriter, write::FileOptions, CompressionMethod};
 use freetype::{Library, Face, face::LoadFlag, Bitmap};
-use image::{DynamicImage, ImageBuffer, ImageFormat};
+use image::{DynamicImage, ImageBuffer, ImageFormat, RgbImage};
 use indicatif::ProgressBar;
 use quick_xml::Writer;
 use viuer::Config;
@@ -33,10 +33,10 @@ fn get_pixels(bitmap: Bitmap, image_height: u32, offset_y: i32) -> DynamicImage 
 
     let mut image = DynamicImage::ImageLuma8(figure);
     image.invert();
-    image
+    image 
 }
 
-fn render_single_character(face: &Face, ch: char, image_height: u32, max_ascent: u32) -> DynamicImage {
+fn render_single_character(face: &Face, ch: char, image_height: u32, max_ascent: u32) -> RgbImage {
     // Try to render a single character.
     face.load_char(ch as usize, LoadFlag::RENDER)
         .expect("Unable to load one of the characters for rendering.");
@@ -57,7 +57,7 @@ fn render_single_character(face: &Face, ch: char, image_height: u32, max_ascent:
             .expect("Image printing failed.");
     }
 
-    img
+    img.to_rgb8()
 }
 
 fn write_header(chars: &[char]) -> Vec<u8> {
