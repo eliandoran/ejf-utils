@@ -1,12 +1,12 @@
 use freetype::{Library, Face, face::LoadFlag, Bitmap};
 
 const FONT_PATH: &'static str = "./fonts/Roboto/Roboto-Light.ttf";
-const FACE_CHAR_WIDTH: isize = 1000;
+const FACE_CHAR_WIDTH: isize = 10 * 64;
 const FACE_HORIZONTAL_RESOLUTION: u32 = 100;
-const RENDER_CHAR: char = 'A';
+const RENDER_CHAR: char = 'q';
 
 const OUTPUT_WIDTH: usize = 32;
-const OUTPUT_HEIGHT: usize = 64;
+const OUTPUT_HEIGHT: usize = 24;
 
 fn get_pixels(bitmap: Bitmap, x: usize, y: usize) -> [[u8; OUTPUT_WIDTH]; OUTPUT_HEIGHT] {
     let mut figure = [[0; OUTPUT_WIDTH]; OUTPUT_HEIGHT];
@@ -34,9 +34,10 @@ fn render_character(pixels: [[u8; OUTPUT_WIDTH]; OUTPUT_HEIGHT]) {
         for j in 0..OUTPUT_WIDTH {
             print!("{}",
                 match pixels[i][j] {
-                    p if p == 0 => " ",
-                    p if p < 128 => "*",
-                    _ => "+"
+                    p if p == 0 => ".",
+                    p if p <= 100 => "░",
+                    p if p <= 150 => "▓",
+                    _ => "█"
                 }
             );
         }
