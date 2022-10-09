@@ -1,48 +1,36 @@
 use freetype::{Library, Face, face::LoadFlag, Bitmap};
+use image::{DynamicImage, ImageBuffer};
+use viuer::Config;
 
 const FONT_PATH: &'static str = "./fonts/Roboto/Roboto-Light.ttf";
 const FACE_CHAR_WIDTH: isize = 10 * 64;
 const FACE_HORIZONTAL_RESOLUTION: u32 = 100;
 const RENDER_CHAR: char = 'q';
 
-const OUTPUT_WIDTH: usize = 32;
-const OUTPUT_HEIGHT: usize = 24;
+const OUTPUT_WIDTH: u32 = 32;
+const OUTPUT_HEIGHT: u32 = 24;
 
-fn get_pixels(bitmap: Bitmap, x: usize, y: usize) -> [[u8; OUTPUT_WIDTH]; OUTPUT_HEIGHT] {
-    let mut figure = [[0; OUTPUT_WIDTH]; OUTPUT_HEIGHT];
-    let mut p: usize = 0;
-    let mut q: usize = 0;
-    let width: usize = bitmap.width() as usize;
-    let x_max: usize = x + width;
-    let y_max: usize = y + bitmap.rows() as usize;
+fn get_pixels(bitmap: Bitmap, x: u32, y: u32) -> DynamicImage {
+    //let mut figure = DynamicImage::new_luma8(OUTPUT_WIDTH as u32, OUTPUT_HEIGHT as u32);
+    let mut figure = ImageBuffer::new(OUTPUT_WIDTH as u32, OUTPUT_HEIGHT as u32);
+    let mut p = 0;
+    let mut q = 0;
+    let width = bitmap.width() as usize;
+    let x_max: u32 = x + width as u32;
+    let y_max: u32 = y + bitmap.rows() as u32;
 
     for i in x..x_max {
         for j in y..y_max {
             if i < OUTPUT_WIDTH && j < OUTPUT_HEIGHT {
-                figure[j][i] |= bitmap.buffer()[q * width + p];
+                figure[(i,j)] = image::Luma([bitmap.buffer()[q * width + p]]);
                 q += 1;
             }
         }
         q = 0;
         p += 1;
     }
-    figure
-}
 
-fn render_character(pixels: [[u8; OUTPUT_WIDTH]; OUTPUT_HEIGHT]) {
-    for i in 0..OUTPUT_HEIGHT {
-        for j in 0..OUTPUT_WIDTH {
-            print!("{}",
-                match pixels[i][j] {
-                    p if p == 0 => ".",
-                    p if p <= 100 => "░",
-                    p if p <= 150 => "▓",
-                    _ => "█"
-                }
-            );
-        }
-        println!();
-    }
+    DynamicImage::ImageLuma8(figure)
 }
 
 fn main() {
@@ -61,14 +49,21 @@ fn main() {
         .expect("Unable to load one of the characters for rendering.");
 
     let glyph = face.glyph();
-    let x = glyph.bitmap_left() as usize;
-    let y = glyph.bitmap_top() as usize;
+    let x = glyph.bitmap_left() as u32;
+    let y = glyph.bitmap_top() as u32;
     
     println!("Font family: {}", face.family_name().unwrap());
     println!("Bitmap position: x={}, y={}", x, y);
 
     // Get the pixels of that single character.
-    let pixels = get_pixels(glyph.bitmap(), x, y);
-    render_character(pixels);
+    let img = get_pixels(glyph.bitmap(), x, y);    
+
+    let config = Config {
+        absolute_offset: false,
+        ..Default::default()
+    };
+
+    viuer::print(&img, &config)
+        .expect("Image printing failed.");
 }
 
