@@ -156,10 +156,17 @@ fn main() {
         let mut cursor = Cursor::new(Vec::new());
         
         image.write_to(&mut cursor, ImageFormat::Png).unwrap();
-        let filename = format!("0x{:x}.png", ch as u32);
-        zip.start_file(filename, zip_options).unwrap();
-        zip.write(&cursor.into_inner().as_slice()).unwrap();
         
+        // Write the character to the zip file
+        let char_code = format!("0x{:x}.png", ch as u32);
+        let image_data = cursor.into_inner();
+        zip.start_file(&char_code, zip_options).unwrap();
+        zip.write(&image_data).unwrap();
+
+        // Also write the "design" character to the zip file.
+        zip.start_file(format!("design_{}", &char_code), zip_options).unwrap();
+        zip.write(&image_data).unwrap();
+
         vec.push(ch);
         bar.inc(1);
     }    
