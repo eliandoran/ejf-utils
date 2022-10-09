@@ -5,19 +5,18 @@ use viuer::Config;
 const FONT_PATH: &'static str = "./fonts/Roboto/Roboto-Light.ttf";
 const FACE_CHAR_WIDTH: isize = 10 * 64;
 const FACE_HORIZONTAL_RESOLUTION: u32 = 100;
-const RENDER_CHAR: char = 'q';
+const RENDER_CHAR: char = 'A';
 
 const OUTPUT_WIDTH: u32 = 32;
 const OUTPUT_HEIGHT: u32 = 24;
 
 fn get_pixels(bitmap: Bitmap, x: u32, y: u32) -> DynamicImage {
-    //let mut figure = DynamicImage::new_luma8(OUTPUT_WIDTH as u32, OUTPUT_HEIGHT as u32);
     let mut figure = ImageBuffer::new(OUTPUT_WIDTH as u32, OUTPUT_HEIGHT as u32);
     let mut p = 0;
     let mut q = 0;
     let width = bitmap.width() as usize;
     let x_max: u32 = x + width as u32;
-    let y_max: u32 = y + bitmap.rows() as u32;
+    let y_max: u32 = y + bitmap.rows() as u32;    
 
     for i in x..x_max {
         for j in y..y_max {
@@ -30,7 +29,9 @@ fn get_pixels(bitmap: Bitmap, x: u32, y: u32) -> DynamicImage {
         p += 1;
     }
 
-    DynamicImage::ImageLuma8(figure)
+    let mut image = DynamicImage::ImageLuma8(figure);
+    image.invert();
+    image
 }
 
 fn main() {
