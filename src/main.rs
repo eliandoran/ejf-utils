@@ -1,10 +1,11 @@
+use binstall_zip::{ZipWriter, write::FileOptions, CompressionMethod};
 use freetype::{Library, Face, face::LoadFlag, Bitmap};
 use image::{DynamicImage, ImageBuffer, ImageFormat};
 use indicatif::ProgressBar;
 use quick_xml::Writer;
 use viuer::Config;
-use core::cmp::max;
-use std::fs::File;
+use core::{cmp::max};
+use std::{fs::File, io::{Write, Cursor}};
 
 const FONT_PATH: &'static str = "./fonts/Roboto/Roboto-Light.ttf";
 const FACE_CHAR_WIDTH: isize = 25 * 64;
@@ -35,7 +36,7 @@ fn get_pixels(bitmap: Bitmap, image_height: u32, offset_y: i32) -> DynamicImage 
     image
 }
 
-fn render_single_character(face: &Face, ch: char, image_height: u32, max_ascent: u32) {
+fn render_single_character(face: &Face, ch: char, image_height: u32, max_ascent: u32) -> DynamicImage {
     // Try to render a single character.
     face.load_char(ch as usize, LoadFlag::RENDER)
         .expect("Unable to load one of the characters for rendering.");
@@ -46,10 +47,6 @@ fn render_single_character(face: &Face, ch: char, image_height: u32, max_ascent:
     let offset_y = max_ascent as i32 - (glyph.bitmap_top() as i32);
     let img = get_pixels(glyph.bitmap(), image_height, offset_y);    
 
-    // Save the output to png.
-    let filename = format!("output/0x{:x}.png", ch as u32);
-    img.save_with_format(filename, ImageFormat::Png).unwrap();
-
     if PRINT_CHARACTERS {
         let config = Config {
             absolute_offset: false,
@@ -59,11 +56,12 @@ fn render_single_character(face: &Face, ch: char, image_height: u32, max_ascent:
         viuer::print(&img, &config)
             .expect("Image printing failed.");
     }
+
+    img
 }
 
-fn write_header(chars: &[char]) {
-    let file = File::create("output/Header").unwrap();
-    let mut writer = Writer::new(file);
+fn write_header(chars: &[char]) -> Vec<u8> {
+    let mut writer = Writer::new(Vec::new());
     writer.create_element("FontGenerator")
         .write_inner_content(|writer| {
             writer.create_element("Informations")
@@ -101,9 +99,14 @@ fn write_header(chars: &[char]) {
                 })?;
             Ok(())
         }).unwrap();
+    writer.into_inner()
 }
 
 fn main() {
+    // Open the output file
+    let zip_file = File::create("output/font.ejf").unwrap();
+    let mut zip = ZipWriter::new(zip_file);
+
     // Try to open the font.
     let library = Library::init().unwrap();
     let face: Face = library
@@ -139,6 +142,8 @@ fn main() {
     // Render the characters.
     let bar = ProgressBar::new(256);
     let mut vec = Vec::<char>::new();
+    let zip_options = FileOptions::default()
+        .compression_method(CompressionMethod::Stored);
     
     for code in (0 as u8)..(255 as u8) {
         let ch = code as char;
@@ -147,11 +152,21 @@ fn main() {
             continue;
         }
 
-        render_single_character(&face, ch as char, image_height, max_ascent);        
+        let image = render_single_character(&face, ch as char, image_height, max_ascent);
+        let mut cursor = Cursor::new(Vec::new());
+        
+        image.write_to(&mut cursor, ImageFormat::Png).unwrap();
+        let filename = format!("0x{:x}.png", ch as u32);
+        zip.start_file(filename, zip_options).unwrap();
+        zip.write(&cursor.into_inner().as_slice()).unwrap();
+        
         vec.push(ch);
         bar.inc(1);
     }    
 
-    write_header(&vec);
+    // Write the header
+    let header = write_header(&vec);
+    zip.start_file("Header", zip_options).unwrap();
+    zip.write(&header).unwrap();
+    zip.finish().unwrap();
 }
-
