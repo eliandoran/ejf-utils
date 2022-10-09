@@ -48,7 +48,7 @@ fn render_single_character(face: &Face, ch: char) {
     let img = get_pixels(glyph.bitmap(), x, y);    
 
     // Save the output to png.
-    let filename = format!("output/{}.png", ch);
+    let filename = format!("output/0x{:x}.png", ch as u32);
     img.save_with_format(filename, ImageFormat::Png).unwrap();
 
     let config = Config {
@@ -73,8 +73,8 @@ fn main() {
     face.set_char_size(FACE_CHAR_WIDTH, 0, FACE_HORIZONTAL_RESOLUTION, 0)
         .expect("Unable to set the character size.");
 
-    for ch in 'a'..'z' {
-        render_single_character(&face, ch);
+    for ch in (0 as u8)..(255 as u8) {
+        render_single_character(&face, ch as char);
     }    
 }
 
