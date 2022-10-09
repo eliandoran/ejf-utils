@@ -9,10 +9,8 @@ const FACE_HORIZONTAL_RESOLUTION: u32 = 100;
 const SKIP_CONTROL_CHARACTERS: bool = true;
 const PRINT_CHARACTERS: bool = false;
 
-const OUTPUT_WIDTH: u32 = 32;
-
-fn get_pixels(bitmap: Bitmap, height: u32) -> DynamicImage {    
-    let mut figure = ImageBuffer::new(OUTPUT_WIDTH as u32, height);
+fn get_pixels(bitmap: Bitmap, size: (u32, u32)) -> DynamicImage {    
+    let mut figure = ImageBuffer::new(size.0, size.1);
     let width = bitmap.width() as usize;
     
     for cx in 0..width {
@@ -28,7 +26,7 @@ fn get_pixels(bitmap: Bitmap, height: u32) -> DynamicImage {
     image
 }
 
-fn render_single_character(face: &Face, ch: char, height: u32) {
+fn render_single_character(face: &Face, ch: char, size: (u32, u32)) {
     // Try to render a single character.
     face.load_char(ch as usize, LoadFlag::RENDER)
         .expect("Unable to load one of the characters for rendering.");
@@ -40,7 +38,7 @@ fn render_single_character(face: &Face, ch: char, height: u32) {
     println!("Bitmap position: char='{}', x={}, y={}", ch, x, y);
 
     // Get the pixels of that single character.
-    let img = get_pixels(glyph.bitmap(), height);    
+    let img = get_pixels(glyph.bitmap(), size);    
 
     // Save the output to png.
     let filename = format!("output/0x{:x}.png", ch as u32);
@@ -69,18 +67,24 @@ fn main() {
         .expect("Unable to set the character size.");
 
     // Determine max height.
-    let mut max_height: u32= 0;
+    let mut max_height = 0;
+    let mut max_width: u32 = 0;
     for code in (0 as u8)..(255 as u8) {
         face.load_char(code as usize, LoadFlag::RENDER)
             .expect("Unable to load character.");
-        let cur_height = face.glyph().bitmap().rows() as u32;        
+        let bitmap = face.glyph().bitmap();
+        let cur_width = bitmap.width() as u32;
+        let cur_height = bitmap.rows() as u32;
+        if cur_width > max_width {
+            max_width = cur_width;
+        }
         if cur_height > max_height {
             max_height = cur_height;
-        }
+        }        
     }
 
     println!("Font family: {}", face.family_name().unwrap());
-    println!("Max height: {}px", max_height);
+    println!("Image dimensions: width={}px, height={}px", max_width, max_height);
 
     // Render the characters.
     for code in (0 as u8)..(255 as u8) {
@@ -90,7 +94,7 @@ fn main() {
             continue;
         }
 
-        render_single_character(&face, ch as char, max_height);
+        render_single_character(&face, ch as char, (max_width, max_height));
     }    
 }
 
