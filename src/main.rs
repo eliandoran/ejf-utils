@@ -158,7 +158,7 @@ fn main() {
         image.write_to(&mut cursor, ImageFormat::Png).unwrap();
         
         // Write the character to the zip file
-        let char_code = format!("0x{:x}.png", ch as u32);
+        let char_code = format!("0x{:x}", ch as u32);
         let image_data = cursor.into_inner();
         zip.start_file(&char_code, zip_options).unwrap();
         zip.write(&image_data).unwrap();
