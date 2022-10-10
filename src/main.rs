@@ -1,15 +1,21 @@
+use std::fs;
+use serde::{Deserialize};
+
 mod ejf;
 mod char_range;
 use char_range::char_range;
 use ejf::{EjfConfig, Error, build_ejf};
 
+#[derive(Debug, Deserialize)]
+struct Config {
+    font: EjfConfig
+}
+
 fn main() {    
-    let result = build_ejf(EjfConfig {
-        char_range: "0x0, 0x40-0x50,0x60-0x80".to_string(),
-        path: "./fonts/Roboto/Roboto-Light.ttf".to_string(),
-        size: 25,
-        skip_control_characters: false
-    });
+    let file_data = fs::read_to_string("input.toml").unwrap();
+    let config: Config = toml::from_str(&file_data).unwrap();
+
+    let result = build_ejf(config.font);
 
     let message: String = match result {
         Ok(_) => ".ejf file generated successfully.".to_string(),

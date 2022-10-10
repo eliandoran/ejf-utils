@@ -2,6 +2,7 @@ use binstall_zip::{ZipWriter, write::FileOptions, CompressionMethod};
 use freetype::{Library, Face, face::LoadFlag};
 use image::ImageFormat;
 use indicatif::ProgressBar;
+use serde::{Serialize, Deserialize};
 use super::char_range;
 
 mod errors;
@@ -14,11 +15,12 @@ pub use crate::ejf::errors::Error;
 const FACE_HORIZONTAL_RESOLUTION: u32 = 100;
 const PRINT_CHARACTERS: bool = false;
 
+#[derive(Debug, Serialize, Deserialize)]
 pub struct EjfConfig {
-    pub path: String,
-    pub size: i8,
-    pub char_range: String,
-    pub skip_control_characters: bool
+    path: String,
+    size: i8,
+    char_range: String,
+    skip_control_characters: bool
 }
 
 fn determine_max_ascend(face: &Face)  -> Result<u32, Error> {

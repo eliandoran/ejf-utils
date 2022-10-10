@@ -1,0 +1,5 @@
+[font]
+char_range="0x0, 0x40-0x50,0x60-0x80"
+path="./fonts/Roboto/Roboto-Light.ttf"
+size=25
+skip_control_characters=false
