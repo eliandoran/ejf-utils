@@ -3,10 +3,12 @@ use freetype::{Library, Face, face::LoadFlag};
 use image::ImageFormat;
 use indicatif::ProgressBar;
 
+mod errors;
 mod header;
 mod renderer;
 
 use std::{fs::File, io::{Write, Cursor}};
+pub use crate::ejf::errors::Error;
 
 const FACE_HORIZONTAL_RESOLUTION: u32 = 100;
 const PRINT_CHARACTERS: bool = false;
@@ -17,24 +19,22 @@ pub struct EjfConfig {
     pub skip_control_characters: bool
 }
 
-pub fn build_ejf(config: EjfConfig) {
+pub fn build_ejf(config: EjfConfig) -> Result<(), Error> {
     // Open the output file
-    let zip_file = File::create("output/font.ejf").unwrap();
+    let zip_file = File::create("output/font.ejf")?;
     let mut zip = ZipWriter::new(zip_file);
 
     // Try to open the font.
-    let library = Library::init().unwrap();
-    let face: Face = library
-        .new_face(config.path, 0)
-        .expect("Unable to load the font file to be used for rendering.\nPlease check the path to the font, permissions or that the file format is supported.");    
+    let library = Library::init()?;
+    let face: Face = library.new_face(config.path, 0)?;
 
     // Set face properties.
     let char_width = config.size as isize * 64;
-    face.set_char_size(char_width, 0, FACE_HORIZONTAL_RESOLUTION, 0)
-        .expect("Unable to set the character size.");
+    face.set_char_size(char_width, 0, FACE_HORIZONTAL_RESOLUTION, 0)?;
 
     // Determine ascent, descent, image height
-    let y_scale = face.size_metrics().unwrap().y_scale as f32;
+    let metrics = face.size_metrics().ok_or(Error::MetricsError);
+    let y_scale = metrics?.y_scale as f32;
     let max_ascent = (face.ascender() as f32 * (y_scale / 65536.0)) as u32 >> 6;
     
     // Determine max height.
@@ -52,7 +52,7 @@ pub fn build_ejf(config: EjfConfig) {
 
     let image_height = (max_ascent as i32 + max_descent) as u32;
 
-    println!("Font family: {}", face.family_name().unwrap());
+    println!("Font family: {:?}", face.family_name());
     println!("The characters will have a height of: {}px.", image_height);
 
     // Render the characters.
@@ -75,25 +75,27 @@ pub fn build_ejf(config: EjfConfig) {
             renderer::print_character(&image);
         }
 
-        image.to_rgb8().write_to(&mut cursor, ImageFormat::Png).unwrap();
+        image.to_rgb8().write_to(&mut cursor, ImageFormat::Png)?;
         
         // Write the character to the zip file
         let char_code = format!("0x{:x}", ch as u32);
         let image_data = cursor.into_inner();
-        zip.start_file(&char_code, zip_options).unwrap();
-        zip.write(&image_data).unwrap();        
+        zip.start_file(&char_code, zip_options)?;
+        zip.write(&image_data)?;        
 
         // Also write the "design" character to the zip file.
-        zip.start_file(format!("design_{}", &char_code), zip_options).unwrap();
-        zip.write(&image_data).unwrap();
+        zip.start_file(format!("design_{}", &char_code), zip_options)?;
+        zip.write(&image_data)?;
 
         vec.push(ch);
         bar.inc(1);
     }    
 
     // Write the header
-    let header = header::write_header(&vec, image_height);
-    zip.start_file("Header", zip_options).unwrap();
-    zip.write(&header).unwrap();
-    zip.finish().unwrap();
+    let header = header::write_header(&vec, image_height)?;
+    zip.start_file("Header", zip_options)?;
+    zip.write(&header)?;
+    zip.finish()?;
+
+    Ok(())
 }

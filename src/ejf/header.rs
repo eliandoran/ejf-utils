@@ -1,6 +1,6 @@
-use quick_xml::Writer;
+use quick_xml::{Writer, Error};
 
-pub fn write_header(chars: &[char], height: u32) -> Vec<u8> {
+pub fn write_header(chars: &[char], height: u32) -> Result<Vec<u8>, Error> {
     let mut writer = Writer::new(Vec::new());
     writer.create_element("FontGenerator")
         .write_inner_content(|writer| {
@@ -38,6 +38,6 @@ pub fn write_header(chars: &[char], height: u32) -> Vec<u8> {
                     Ok(())
                 })?;
             Ok(())
-        }).unwrap();
-    writer.into_inner()
+        })?;
+    Ok(writer.inner().to_vec())
 }
