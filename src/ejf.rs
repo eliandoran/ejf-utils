@@ -8,14 +8,16 @@ mod renderer;
 
 use std::{fs::File, io::{Write, Cursor}};
 
-const FONT_PATH: &'static str = "./fonts/Roboto/Roboto-Light.ttf";
-const FACE_CHAR_WIDTH: isize = 25 * 64;
 const FACE_HORIZONTAL_RESOLUTION: u32 = 100;
-
-const SKIP_CONTROL_CHARACTERS: bool = true;
 const PRINT_CHARACTERS: bool = false;
 
-pub fn build_ejf() {
+pub struct EjfConfig {
+    pub path: String,
+    pub size: i8,
+    pub skip_control_characters: bool
+}
+
+pub fn build_ejf(config: EjfConfig) {
     // Open the output file
     let zip_file = File::create("output/font.ejf").unwrap();
     let mut zip = ZipWriter::new(zip_file);
@@ -23,11 +25,12 @@ pub fn build_ejf() {
     // Try to open the font.
     let library = Library::init().unwrap();
     let face: Face = library
-        .new_face(FONT_PATH, 0)
+        .new_face(config.path, 0)
         .expect("Unable to load the font file to be used for rendering.\nPlease check the path to the font, permissions or that the file format is supported.");    
 
     // Set face properties.
-    face.set_char_size(FACE_CHAR_WIDTH, 0, FACE_HORIZONTAL_RESOLUTION, 0)
+    let char_width = config.size as isize * 64;
+    face.set_char_size(char_width, 0, FACE_HORIZONTAL_RESOLUTION, 0)
         .expect("Unable to set the character size.");
 
     // Determine ascent, descent, image height
@@ -61,7 +64,7 @@ pub fn build_ejf() {
     for code in (0 as u8)..(255 as u8) {
         let ch = code as char;
 
-        if SKIP_CONTROL_CHARACTERS && ch.is_control() {
+        if config.skip_control_characters && ch.is_control() {
             continue;
         }
 
