@@ -19,6 +19,33 @@ pub struct EjfConfig {
     pub skip_control_characters: bool
 }
 
+fn determine_max_ascend(face: &Face)  -> Result<u32, Error> {
+    let metrics = face.size_metrics().ok_or(Error::MetricsError);
+    let y_scale = metrics?.y_scale as f32;
+    Ok((face.ascender() as f32 * (y_scale / 65536.0)) as u32 >> 6)
+}
+
+fn determine_max_height(face: &Face, max_ascent: u32) -> Result<u32, Error> {    
+    let mut max_descent: u32 = 0;
+    for code in (0 as u8)..(255 as u8) {
+        face.load_char(code as usize, LoadFlag::RENDER)
+            .expect("Unable to load character.");
+        let glyph = face.glyph();
+        let height = (glyph.metrics().height >> 6) as i32;
+        let top = glyph.bitmap_top();
+
+        if height >= top {
+            let cur_descent = (height - glyph.bitmap_top()) as u32;
+    
+            if cur_descent > max_descent {
+                max_descent = cur_descent;
+            }
+        }
+    }
+
+    Ok((max_ascent + max_descent) as u32)
+}
+
 pub fn build_ejf(config: EjfConfig) -> Result<(), Error> {
     // Open the output file
     let zip_file = File::create("output/font.ejf")?;
@@ -31,26 +58,10 @@ pub fn build_ejf(config: EjfConfig) -> Result<(), Error> {
     // Set face properties.
     let char_width = config.size as isize * 64;
     face.set_char_size(char_width, 0, FACE_HORIZONTAL_RESOLUTION, 0)?;
-
-    // Determine ascent, descent, image height
-    let metrics = face.size_metrics().ok_or(Error::MetricsError);
-    let y_scale = metrics?.y_scale as f32;
-    let max_ascent = (face.ascender() as f32 * (y_scale / 65536.0)) as u32 >> 6;
     
     // Determine max height.
-    let mut max_descent: i32 = 0;
-    for code in (0 as u8)..(255 as u8) {
-        face.load_char(code as usize, LoadFlag::RENDER)
-            .expect("Unable to load character.");
-        let glyph = face.glyph();
-        let cur_descent = (glyph.metrics().height >> 6) as i32 - glyph.bitmap_top();
-
-        if cur_descent > max_descent {
-            max_descent = cur_descent;
-        }
-    }
-
-    let image_height = (max_ascent as i32 + max_descent) as u32;
+    let max_ascent = determine_max_ascend(&face)?;
+    let image_height = determine_max_height(&face, max_ascent)?;
 
     println!("Font family: {:?}", face.family_name());
     println!("The characters will have a height of: {}px.", image_height);
