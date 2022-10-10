@@ -2,6 +2,7 @@ use binstall_zip::{ZipWriter, write::FileOptions, CompressionMethod};
 use freetype::{Library, Face, face::LoadFlag};
 use image::ImageFormat;
 use indicatif::ProgressBar;
+use super::char_range;
 
 mod errors;
 mod header;
@@ -16,6 +17,7 @@ const PRINT_CHARACTERS: bool = false;
 pub struct EjfConfig {
     pub path: String,
     pub size: i8,
+    pub char_range: String,
     pub skip_control_characters: bool
 }
 
@@ -25,10 +27,10 @@ fn determine_max_ascend(face: &Face)  -> Result<u32, Error> {
     Ok((face.ascender() as f32 * (y_scale / 65536.0)) as u32 >> 6)
 }
 
-fn determine_max_height(face: &Face, max_ascent: u32) -> Result<u32, Error> {    
+fn determine_max_height(face: &Face, chars: &[u8], max_ascent: u32) -> Result<u32, Error> {    
     let mut max_descent: u32 = 0;
-    for code in (0 as u8)..(255 as u8) {
-        face.load_char(code as usize, LoadFlag::RENDER)
+    for code in chars {
+        face.load_char(*code as usize, LoadFlag::RENDER)
             .expect("Unable to load character.");
         let glyph = face.glyph();
         let height = (glyph.metrics().height >> 6) as i32;
@@ -47,6 +49,9 @@ fn determine_max_height(face: &Face, max_ascent: u32) -> Result<u32, Error> {
 }
 
 pub fn build_ejf(config: EjfConfig) -> Result<(), Error> {
+    // Parse the character range from the config.
+    let chars = char_range(config.char_range)?;
+
     // Open the output file
     let zip_file = File::create("output/font.ejf")?;
     let mut zip = ZipWriter::new(zip_file);
@@ -61,19 +66,18 @@ pub fn build_ejf(config: EjfConfig) -> Result<(), Error> {
     
     // Determine max height.
     let max_ascent = determine_max_ascend(&face)?;
-    let image_height = determine_max_height(&face, max_ascent)?;
+    let image_height = determine_max_height(&face, &chars, max_ascent)?;
 
-    println!("Font family: {:?}", face.family_name());
+    println!("Font family: {}", face.family_name().unwrap_or_default());
     println!("The characters will have a height of: {}px.", image_height);
 
     // Render the characters.
-    let bar = ProgressBar::new(256);
-    let mut vec = Vec::<char>::new();
+    let bar = ProgressBar::new(chars.len() as u64);
     let zip_options = FileOptions::default()
         .compression_method(CompressionMethod::Stored);
     
-    for code in (0 as u8)..(255 as u8) {
-        let ch = code as char;
+    for code in &chars {
+        let ch = *code as char;
 
         if config.skip_control_characters && ch.is_control() {
             continue;
@@ -98,12 +102,11 @@ pub fn build_ejf(config: EjfConfig) -> Result<(), Error> {
         zip.start_file(format!("design_{}", &char_code), zip_options)?;
         zip.write(&image_data)?;
 
-        vec.push(ch);
         bar.inc(1);
     }    
 
     // Write the header
-    let header = header::write_header(&vec, image_height)?;
+    let header = header::write_header(&chars, image_height)?;
     zip.start_file("Header", zip_options)?;
     zip.write(&header)?;
     zip.finish()?;

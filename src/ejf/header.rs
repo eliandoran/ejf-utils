@@ -30,12 +30,12 @@ fn write_font_properties(writer: &mut Writer<Vec<u8>>, height: u32) -> Result<()
     Ok(())
 }
 
-fn write_character_propertiers(writer: &mut Writer<Vec<u8>>, chars: &[char]) -> Result<(), Error> {
+fn write_character_propertiers(writer: &mut Writer<Vec<u8>>, chars: &[u8]) -> Result<(), Error> {
     writer
         .create_element("FontCharacterProperties")
         .write_inner_content(|writer| {
             for ch in chars.iter() {
-                let index = format!("0x{:x}", (*ch) as u8); 
+                let index = format!("0x{:x}", ch); 
                 writer.create_element("Character")
                     .with_attribute(("Index", index.as_str()))
                     .with_attribute(("LeftSpace", "0"))
@@ -49,7 +49,7 @@ fn write_character_propertiers(writer: &mut Writer<Vec<u8>>, chars: &[char]) -> 
     Ok(())
 }
 
-pub fn write_header(chars: &[char], height: u32) -> Result<Vec<u8>, Error> {
+pub fn write_header(chars: &[u8], height: u32) -> Result<Vec<u8>, Error> {
     let mut writer = Writer::new(Vec::new());
     writer
         .create_element("FontGenerator")

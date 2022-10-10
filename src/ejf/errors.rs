@@ -3,6 +3,7 @@ use binstall_zip::result::ZipError;
 use std::io::Error as IoError;
 use image::ImageError;
 use freetype::Error as FreeTypeError;
+use super::char_range::ParseError as RangeParseError;
 
 pub enum Error {
 
@@ -20,6 +21,9 @@ pub enum Error {
 
     /// Error while initializing or using the FreeType engine.
     FreeTypeError(FreeTypeError),
+
+    /// Error when parsing the list of characters to be imported.
+    RangeParseError(RangeParseError),
 
     /// Unable to determine the character metrics.
     MetricsError
@@ -58,5 +62,12 @@ impl From<FreeTypeError> for Error {
     #[inline]
     fn from(error: FreeTypeError) -> Self {
         Error::FreeTypeError(error)
+    }
+}
+
+impl From<RangeParseError> for Error {
+    #[inline]
+    fn from(error: RangeParseError) -> Self {
+        Error::RangeParseError(error)
     }
 }
