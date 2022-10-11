@@ -17,7 +17,8 @@ const PRINT_CHARACTERS: bool = false;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct EjfConfig {
-    path: String,
+    input: String,
+    output: String,
     size: i8,
     char_range: String,
     skip_control_characters: bool
@@ -55,12 +56,12 @@ pub fn build_ejf(config: EjfConfig) -> Result<(), Error> {
     let chars = char_range(config.char_range)?;
 
     // Open the output file
-    let zip_file = File::create("output/font.ejf")?;
+    let zip_file = File::create(config.output)?;
     let mut zip = ZipWriter::new(zip_file);
 
     // Try to open the font.
     let library = Library::init()?;
-    let face: Face = library.new_face(config.path, 0)?;
+    let face: Face = library.new_face(config.input, 0)?;
 
     // Set face properties.
     let char_width = config.size as isize * 64;
