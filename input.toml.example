@@ -1,5 +1,14 @@
-[font]
+[[font]]
 char_range="0x0, 0x40-0x50,0x60-0x80"
-path="./fonts/Roboto/Roboto-Light.ttf"
+input="./fonts/Roboto/Roboto-Light.ttf"
+output="./output/1.ejf"
 size=25
 skip_control_characters=false
+
+[[font]]
+char_range="0x0, 0x40-0x50,0x60-0x80"
+input="./fonts/Roboto/Roboto-Italic.ttf"
+output="./output/2.ejf"
+size=25
+skip_control_characters=false
+dpi=100

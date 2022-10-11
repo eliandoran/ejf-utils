@@ -12,7 +12,7 @@ mod renderer;
 use std::{fs::File, io::{Write, Cursor}};
 pub use crate::ejf::errors::Error;
 
-const FACE_HORIZONTAL_RESOLUTION: u32 = 100;
+const DEFAULT_DPI: u32 = 72;
 const PRINT_CHARACTERS: bool = false;
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -21,7 +21,8 @@ pub struct EjfConfig {
     output: String,
     size: i8,
     char_range: String,
-    skip_control_characters: bool
+    skip_control_characters: bool,
+    dpi: Option<u32>
 }
 
 fn determine_max_ascend(face: &Face)  -> Result<u32, Error> {
@@ -65,7 +66,8 @@ pub fn build_ejf(config: EjfConfig) -> Result<(), Error> {
 
     // Set face properties.
     let char_width = config.size as isize * 64;
-    face.set_char_size(char_width, 0, FACE_HORIZONTAL_RESOLUTION, 0)?;
+    let dpi = config.dpi.unwrap_or(DEFAULT_DPI);
+    face.set_char_size(char_width, 0, dpi, 0)?;
     
     // Determine max height.
     let max_ascent = determine_max_ascend(&face)?;
