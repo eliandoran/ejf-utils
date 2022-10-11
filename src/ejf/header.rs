@@ -20,13 +20,15 @@ fn write_informations(writer: &mut Writer<Vec<u8>>) -> Result<(), Error> {
 fn write_font_properties(writer: &mut Writer<Vec<u8>>, data: &HeaderInfo) -> Result<(), Error> {
     writer
         .create_element("FontProperties")
-        .with_attribute(("Baseline", "13"))
-        .with_attribute(("Filter", "u"))
-        .with_attribute(("Height", data.height.to_string().as_str()))
-        .with_attribute(("Name", data.name.as_str()))
-        .with_attribute(("Space", "5"))
-        .with_attribute(("Style", "pu"))
-        .with_attribute(("Width", "-1"))
+        .with_attributes(vec![
+            ("Baseline", "13"),
+            ("Filter", "u"),
+            ("Height", data.height.to_string().as_str()),
+            ("Name", data.name.as_str()),
+            ("Space", "5"),
+            ("Style", "pu"),
+            ("Width", "-1")
+        ])
         .write_inner_content(|writer| {
             writer.create_element("Identifier")
                 .with_attribute(("Value", "34"))
@@ -43,9 +45,11 @@ fn write_character_propertiers(writer: &mut Writer<Vec<u8>>, data: &HeaderInfo) 
             for ch in data.chars.iter() {
                 let index = format!("0x{:x}", ch); 
                 writer.create_element("Character")
-                    .with_attribute(("Index", index.as_str()))
-                    .with_attribute(("LeftSpace", "0"))
-                    .with_attribute(("RightSpace", "0"))
+                    .with_attributes(vec![
+                        ("Index", index.as_str()),
+                        ("LeftSpace", "0"),
+                        ("RightSpace", "0")
+                    ])
                     .write_empty()?;
             }
 
