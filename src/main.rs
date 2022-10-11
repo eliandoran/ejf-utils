@@ -24,7 +24,7 @@ fn main() {
         let result = build_ejf(font);
     
         let message: String = match result {
-            Ok(_) => ".ejf file generated successfully.".to_string(),
+            Ok(result) => format!("Height of glyphs: {}px", result.height),
             Err(error) => match error {
                 Error::FreeTypeError(_) => "Unable to initialize FreeType.".to_string(),
                 Error::ImageError(_) => "Unable to generate the image files for one or more characters.".to_string(),

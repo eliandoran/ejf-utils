@@ -17,12 +17,16 @@ const PRINT_CHARACTERS: bool = false;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct EjfConfig {
-    input: String,
-    output: String,
-    size: i8,
-    char_range: String,
-    skip_control_characters: bool,
-    dpi: Option<u32>
+    pub input: String,
+    pub output: String,
+    pub size: i8,
+    pub char_range: String,
+    pub skip_control_characters: bool,
+    pub dpi: Option<u32>
+}
+
+pub struct EjfResult {
+    pub height: u32
 }
 
 fn determine_max_ascend(face: &Face)  -> Result<u32, Error> {
@@ -52,7 +56,7 @@ fn determine_max_height(face: &Face, chars: &[u8], max_ascent: u32) -> Result<u3
     Ok((max_ascent + max_descent) as u32)
 }
 
-pub fn build_ejf(config: EjfConfig) -> Result<(), Error> {
+pub fn build_ejf(config: EjfConfig) -> Result<EjfResult, Error> {
     // Parse the character range from the config.
     let chars = char_range(config.char_range)?;
 
@@ -72,9 +76,6 @@ pub fn build_ejf(config: EjfConfig) -> Result<(), Error> {
     // Determine max height.
     let max_ascent = determine_max_ascend(&face)?;
     let image_height = determine_max_height(&face, &chars, max_ascent)?;
-
-    println!("Font family: {}", face.family_name().unwrap_or_default());
-    println!("The characters will have a height of: {}px.", image_height);
 
     // Render the characters.
     let bar = ProgressBar::new(chars.len() as u64);
@@ -116,5 +117,7 @@ pub fn build_ejf(config: EjfConfig) -> Result<(), Error> {
     zip.write(&header)?;
     zip.finish()?;
 
-    Ok(())
+    Ok(EjfResult {
+        height: image_height
+    })
 }
