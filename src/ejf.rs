@@ -21,7 +21,7 @@ const PRINT_CHARACTERS: bool = false;
 pub struct EjfConfig {
     pub input: String,
     pub output: String,
-    pub size: i8,
+    pub size: u32,
     pub char_range: String,
     pub skip_control_characters: bool,
     pub dpi: Option<u32>
