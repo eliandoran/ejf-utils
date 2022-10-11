@@ -22,11 +22,11 @@ fn write_font_properties(writer: &mut Writer<Vec<u8>>, data: &HeaderInfo) -> Res
         .create_element("FontProperties")
         .with_attributes(vec![
             ("Baseline", "13"),
-            ("Filter", "u"),
+            ("Filter", ""),
             ("Height", data.height.to_string().as_str()),
             ("Name", data.name.as_str()),
             ("Space", "5"),
-            ("Style", "pu"),
+            ("Style", "p"),
             ("Width", "-1")
         ])
         .write_inner_content(|writer| {
