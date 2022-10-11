@@ -16,6 +16,9 @@ pub enum Error {
     /// Input/output error when writing the zip/ejf file.
     IoError(IoError),
 
+    /// Unable to determine the name of the resulting font (.ejf) based on the path.
+    NameError,
+
     /// Error while generating character images.
     ImageError(ImageError),
 

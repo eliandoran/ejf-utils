@@ -3,13 +3,15 @@ use freetype::{Library, Face, face::LoadFlag};
 use image::ImageFormat;
 use indicatif::ProgressBar;
 use serde::{Serialize, Deserialize};
+use self::header::HeaderInfo;
+
 use super::char_range;
 
 mod errors;
 mod header;
 mod renderer;
 
-use std::{fs::File, io::{Write, Cursor}};
+use std::{fs::File, io::{Write, Cursor}, path::Path};
 pub use crate::ejf::errors::Error;
 
 const DEFAULT_DPI: u32 = 72;
@@ -26,7 +28,8 @@ pub struct EjfConfig {
 }
 
 pub struct EjfResult {
-    pub height: u32
+    pub height: u32,
+    pub name: String
 }
 
 fn determine_max_ascend(face: &Face)  -> Result<u32, Error> {
@@ -56,12 +59,23 @@ fn determine_max_height(face: &Face, chars: &[u8], max_ascent: u32) -> Result<u3
     Ok((max_ascent + max_descent) as u32)
 }
 
+/// Determine font name (same as the path, minus extension).
+fn get_font_name(output_name: &String) -> Result<String, Error> {
+    let path = Path::new(output_name);
+    match path.file_stem() {
+        Some(path) => Ok(path.to_string_lossy().to_string()),
+        None => Err(Error::NameError)
+    }
+}
+
 pub fn build_ejf(config: EjfConfig) -> Result<EjfResult, Error> {
+    let font_name = get_font_name(&config.output)?;
+
     // Parse the character range from the config.
     let chars = char_range(config.char_range)?;
 
     // Open the output file
-    let zip_file = File::create(config.output)?;
+    let zip_file = File::create(&config.output)?;
     let mut zip = ZipWriter::new(zip_file);
 
     // Try to open the font.
@@ -112,12 +126,17 @@ pub fn build_ejf(config: EjfConfig) -> Result<EjfResult, Error> {
     }    
 
     // Write the header
-    let header = header::write_header(&chars, image_height)?;
+    let header = header::write_header(HeaderInfo {
+        chars: chars,
+        height: image_height,
+        name: font_name.to_string()
+    })?;
     zip.start_file("Header", zip_options)?;
     zip.write(&header)?;
     zip.finish()?;
 
     Ok(EjfResult {
-        height: image_height
+        height: image_height,
+        name: font_name.to_string()
     })
 }
