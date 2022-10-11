@@ -1,6 +1,7 @@
 /target
 /fonts
 *.png
+*.toml
 
 /output
 !.gitkeep
