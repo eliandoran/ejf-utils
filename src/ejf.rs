@@ -71,8 +71,14 @@ pub fn build_ejf(config: EjfConfig) -> Result<EjfResult, Error> {
         .compression_method(CompressionMethod::Stored);
     
     for code in &chars {
-        let ch = *code as char;
+        let ch = char::from_u32(*code);
 
+        // Skip unsupported characters.
+        if ch.is_none() {
+            continue;
+        }
+
+        let ch = ch.unwrap();
         if config.skip_control_characters && ch.is_control() {
             continue;
         }

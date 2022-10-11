@@ -1,7 +1,7 @@
 use quick_xml::{Writer, Error};
 
 pub struct HeaderInfo {
-    pub chars: Vec<u8>,
+    pub chars: Vec<u32>,
     pub height: u32,
     pub name: String
 }

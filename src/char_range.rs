@@ -5,28 +5,33 @@ pub struct ParseError {
     pub message: String
 }
 
-pub fn parse_single_charcode(char_code: &str) -> Result<u8, ParseError> {
-    let trimmed = char_code.trim();
-    if !trimmed.starts_with("0x") {
+pub fn parse_single_charcode(char_code: &str) -> Result<u32, ParseError> {
+    // Trim spaces and ensure it starts with 0x.
+    let char_code = char_code.trim();
+    if !char_code.starts_with("0x") {
         return Err(ParseError {
-            input: trimmed.to_string(),
-            message: format!("Number {} doesn't start with 0x", trimmed)
+            input: char_code.to_string(),
+            message: format!("Number {} doesn't start with 0x", char_code)
         });
     }
 
-    let result = u8::from_str_radix(trimmed.trim_start_matches("0x"), 16);
+    // Trim the 0x for parsing.
+    let char_code = char_code.trim_start_matches("0x");
+
+    let result = u32::from_str_radix(char_code, 16);
     if result.is_err() {
         return Err(ParseError {
-            input: trimmed.to_string(),
-            message: format!("Number {} could not be parsed as a hexadecimal number.", trimmed)
+            input: char_code.to_string(),
+            message: format!("Number {} could not be parsed as a hexadecimal number.", char_code)
         });
     }
 
     Ok(result.unwrap())
 }
 
-pub fn char_range(descriptor: String) -> Result<Vec<u8>, ParseError> {
-    let mut result = Vec::<u8>::new();
+pub fn char_range(descriptor: String) -> Result<Vec<u32>, ParseError> {
+    let descriptor = descriptor.replace(';', ",");
+    let mut result = Vec::<u32>::new();
     for item in descriptor.split(',') {
         let range = item.split_once('-');
 
