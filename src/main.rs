@@ -1,4 +1,4 @@
-use std::fs;
+use std::{fs, process::exit};
 use serde::{Deserialize};
 
 mod ejf;
@@ -13,9 +13,14 @@ struct Config {
 
 fn main() {    
     let file_data = fs::read_to_string("input.toml").unwrap();
-    let config: Config = toml::from_str(&file_data).unwrap();
+    let config: Result<Config, toml::de::Error> = toml::from_str(&file_data);
 
-    for font in config.font {
+    if config.is_err() {
+        println!("Unable to parse the configuration file: {}.", config.unwrap_err().to_string());
+        exit(1)
+    }
+
+    for font in config.unwrap().font {
         let result = build_ejf(font);
     
         let message: String = match result {
