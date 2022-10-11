@@ -61,7 +61,11 @@ fn write_character_propertiers(writer: &mut Writer<Vec<u8>>, data: &HeaderInfo) 
 
 pub fn write_header(data: HeaderInfo) -> Result<Vec<u8>, Error> {
     let mut writer = Writer::new(Vec::new());
-    writer
+
+    // Write the XML header.
+    writer.write(r#"<?xml version="1.0" encoding="UTF-8" standalone="no"?>"#.as_bytes())?;
+    
+    writer        
         .create_element("FontGenerator")
         .write_inner_content(|writer| {
             write_informations(writer)?;    // <Informations>
