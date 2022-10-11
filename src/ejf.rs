@@ -3,7 +3,7 @@ use freetype::{Library, Face};
 use image::ImageFormat;
 use indicatif::ProgressBar;
 use serde::{Serialize, Deserialize};
-use self::{header::HeaderInfo, metrics::determine_metrics};
+use self::{header::HeaderInfo, metrics::determine_metrics_from_font};
 
 use super::char_range;
 
@@ -62,7 +62,7 @@ pub fn build_ejf(config: EjfConfig) -> Result<EjfResult, Error> {
     face.set_char_size(char_width, 0, dpi, 0)?;
     
     // Determine max height.
-    let metrics = determine_metrics(&face, &chars)?;
+    let metrics = determine_metrics_from_font(&face)?;
     let image_height = metrics.height;
 
     // Render the characters.

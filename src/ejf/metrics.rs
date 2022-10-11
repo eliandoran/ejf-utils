@@ -8,7 +8,19 @@ pub struct Metrics {
     pub height: u32
 }
 
-pub fn determine_metrics(face: &Face, chars: &[u8]) -> Result<Metrics, Error> {    
+pub fn determine_metrics_from_font(face: &Face) -> Result<Metrics, Error> {
+    let metrics = face.size_metrics().ok_or(Error::MetricsError);
+    let y_scale = metrics?.y_scale as f32 / 65536.0; // from fixed
+    let ascender = ((face.ascender() as f32 * y_scale) as i32) >> 6;
+    let descender = -((face.descender() as f32 * y_scale) as i32) >> 6;
+    Ok(Metrics {
+        ascent: ascender as u16,
+        descent: descender as u16,
+        height: (ascender + descender) as u32
+    })
+}
+
+pub fn determine_metrics_from_render(face: &Face, chars: &[u8]) -> Result<Metrics, Error> {    
     let mut max_ascent: u16 = 0;
     let mut max_descent: u16 = 0;
     for code in chars {
