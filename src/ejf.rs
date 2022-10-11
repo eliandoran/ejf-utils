@@ -79,6 +79,11 @@ pub fn build_ejf(config: EjfConfig) -> Result<EjfResult, Error> {
         }
 
         let ch = ch.unwrap();
+
+        if ch == ' ' {
+            continue;
+        }
+
         if config.skip_control_characters && ch.is_control() {
             continue;
         }
