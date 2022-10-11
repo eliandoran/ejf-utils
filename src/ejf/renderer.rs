@@ -25,7 +25,7 @@ pub fn get_pixels(bitmap: Bitmap, image_height: u32, offset_y: i32) -> DynamicIm
     image 
 }
 
-pub fn render_single_character(face: &Face, ch: char, image_height: u32, max_ascent: u32) -> DynamicImage {
+pub fn render_single_character(face: &Face, ch: char, image_height: u32, max_ascent: u16) -> DynamicImage {
     // Try to render a single character.
     face.load_char(ch as usize, LoadFlag::RENDER)
         .expect("Unable to load one of the characters for rendering.");

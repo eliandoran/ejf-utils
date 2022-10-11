@@ -1,15 +1,16 @@
 use binstall_zip::{ZipWriter, write::FileOptions, CompressionMethod};
-use freetype::{Library, Face, face::LoadFlag};
+use freetype::{Library, Face};
 use image::ImageFormat;
 use indicatif::ProgressBar;
 use serde::{Serialize, Deserialize};
-use self::header::HeaderInfo;
+use self::{header::HeaderInfo, metrics::determine_metrics};
 
 use super::char_range;
 
 mod errors;
 mod header;
 mod renderer;
+mod metrics;
 
 use std::{fs::File, io::{Write, Cursor}, path::Path};
 pub use crate::ejf::errors::Error;
@@ -30,33 +31,6 @@ pub struct EjfConfig {
 pub struct EjfResult {
     pub height: u32,
     pub name: String
-}
-
-fn determine_max_ascend(face: &Face)  -> Result<u32, Error> {
-    let metrics = face.size_metrics().ok_or(Error::MetricsError);
-    let y_scale = metrics?.y_scale as f32;
-    Ok((face.ascender() as f32 * (y_scale / 65536.0)) as u32 >> 6)
-}
-
-fn determine_max_height(face: &Face, chars: &[u8], max_ascent: u32) -> Result<u32, Error> {    
-    let mut max_descent: u32 = 0;
-    for code in chars {
-        face.load_char(*code as usize, LoadFlag::RENDER)
-            .expect("Unable to load character.");
-        let glyph = face.glyph();
-        let height = (glyph.metrics().height >> 6) as i32;
-        let top = glyph.bitmap_top();
-
-        if height >= top {
-            let cur_descent = (height - glyph.bitmap_top()) as u32;
-    
-            if cur_descent > max_descent {
-                max_descent = cur_descent;
-            }
-        }
-    }
-
-    Ok((max_ascent + max_descent) as u32)
 }
 
 /// Determine font name (same as the path, minus extension).
@@ -88,8 +62,8 @@ pub fn build_ejf(config: EjfConfig) -> Result<EjfResult, Error> {
     face.set_char_size(char_width, 0, dpi, 0)?;
     
     // Determine max height.
-    let max_ascent = determine_max_ascend(&face)?;
-    let image_height = determine_max_height(&face, &chars, max_ascent)?;
+    let metrics = determine_metrics(&face, &chars)?;
+    let image_height = metrics.height;
 
     // Render the characters.
     let bar = ProgressBar::new(chars.len() as u64);
@@ -103,7 +77,7 @@ pub fn build_ejf(config: EjfConfig) -> Result<EjfResult, Error> {
             continue;
         }
 
-        let image = renderer::render_single_character(&face, ch as char, image_height, max_ascent);
+        let image = renderer::render_single_character(&face, ch as char, image_height, metrics.ascent);
         let mut cursor = Cursor::new(Vec::new());
 
         if PRINT_CHARACTERS {
