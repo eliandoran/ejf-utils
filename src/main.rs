@@ -1,4 +1,4 @@
-use std::{fs, process::exit};
+use std::{fs, process::exit, env::args};
 use serde::{Deserialize};
 
 mod ejf;
@@ -11,8 +11,12 @@ struct Config {
     font: Vec<EjfConfig>
 }
 
-fn main() {    
-    let file_data = fs::read_to_string("input.toml").unwrap();
+fn print_usage() {
+    println!("Usage: /path/to/config.toml");
+}
+
+fn generate_fonts(config_path: String) {
+    let file_data = fs::read_to_string(config_path).unwrap();
     let config: Result<Config, toml::de::Error> = toml::from_str(&file_data);
 
     if config.is_err() {
@@ -38,5 +42,12 @@ fn main() {
         };
     
         println!("{}", message);
+    }
+}
+
+fn main() {    
+    match args().nth(1) {
+        Some(config_path) => generate_fonts(config_path),
+        None => print_usage()
     }
 }
