@@ -1,4 +1,4 @@
-use std::{fs, process::exit, env::args};
+use std::{fs, process::exit, env::{args, set_current_dir}, path::Path};
 use serde::{Deserialize};
 
 mod ejf;
@@ -15,7 +15,17 @@ fn print_usage() {
     println!("Usage: /path/to/config.toml");
 }
 
+fn chdir(path: String) -> bool {
+    let root = Path::new(&path).parent();
+    if root.is_none() {
+        return false;
+    }
+
+    set_current_dir(&root.unwrap()).is_err()
+}
+
 fn generate_fonts(config_path: String) {
+    // Read the configuration file.
     let file_data = fs::read_to_string(&config_path);
 
     if file_data.is_err() {
@@ -23,6 +33,7 @@ fn generate_fonts(config_path: String) {
         exit(2);
     }
 
+    // Parse the configuration file as TOML.
     let file_data = file_data.unwrap();
     let config: Result<Config, toml::de::Error> = toml::from_str(&file_data);
 
@@ -31,6 +42,10 @@ fn generate_fonts(config_path: String) {
         exit(1)
     }
 
+    // Change the working directory.
+    chdir(config_path);
+
+    // Generate each font.
     for font in config.unwrap().font {
         let result = build_ejf(&font);
     
