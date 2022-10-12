@@ -1,7 +1,7 @@
 use quick_xml::{Writer, Error};
 
 pub struct HeaderInfo {
-    pub chars: Vec<u32>,
+    pub chars: Vec<char>,
     pub height: u32,
     pub name: String
 }
@@ -43,7 +43,7 @@ fn write_character_propertiers(writer: &mut Writer<Vec<u8>>, data: &HeaderInfo) 
         .create_element("FontCharacterProperties")
         .write_inner_content(|writer| {
             for ch in data.chars.iter() {
-                let index = format!("0x{:x}", ch); 
+                let index = format!("0x{:x}", *ch as u32); 
                 writer.create_element("Character")
                     .with_attributes(vec![
                         ("Index", index.as_str()),

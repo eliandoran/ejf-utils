@@ -46,7 +46,7 @@ pub fn build_ejf(config: &EjfConfig) -> Result<EjfResult, Error> {
     let font_name = get_font_name(&config.output)?;
 
     // Parse the character range from the config.
-    let chars = char_range(&config.char_range)?;
+    let chars = char_range(&config.char_range, config.skip_control_characters)?;
 
     // Open the output file
     let zip_file = File::create(&config.output)?;
@@ -70,25 +70,8 @@ pub fn build_ejf(config: &EjfConfig) -> Result<EjfResult, Error> {
     let zip_options = FileOptions::default()
         .compression_method(CompressionMethod::Stored);
     
-    for code in &chars {
-        let ch = char::from_u32(*code);
-
-        // Skip unsupported characters.
-        if ch.is_none() {
-            continue;
-        }
-
-        let ch = ch.unwrap();
-
-        if ch == ' ' {
-            continue;
-        }
-
-        if config.skip_control_characters && ch.is_control() {
-            continue;
-        }
-
-        let image = renderer::render_single_character(&face, ch as char, image_height, metrics.ascent);
+    for ch in &chars {
+        let image = renderer::render_single_character(&face, *ch, image_height, metrics.ascent);
         let mut cursor = Cursor::new(Vec::new());
 
         if PRINT_CHARACTERS {
@@ -98,7 +81,7 @@ pub fn build_ejf(config: &EjfConfig) -> Result<EjfResult, Error> {
         image.to_rgb8().write_to(&mut cursor, ImageFormat::Png)?;
         
         // Write the character to the zip file
-        let char_code = format!("0x{:x}", ch as u32);
+        let char_code = format!("0x{:x}", *ch as u32);
         let image_data = cursor.into_inner();
         zip.start_file(&char_code, zip_options)?;
         zip.write(&image_data)?;        

@@ -29,16 +29,42 @@ pub fn parse_single_charcode(char_code: &str) -> Result<u32, ParseError> {
     Ok(result.unwrap())
 }
 
-pub fn char_range(descriptor: &String) -> Result<Vec<u32>, ParseError> {
+pub fn parse_char(char_code: u32, skip_control_characters: bool) -> Option<char> {
+    // Parse the character from u32.
+    let ch = char::from_u32(char_code);
+    if ch.is_none() {
+        return None;
+    }
+
+    let ch = ch.unwrap();
+
+    // Skip control characters, if needed.
+    if skip_control_characters && ch.is_control() {
+        return None;
+    }
+
+    // Skip spaces.
+    if ch == ' ' {
+        return None;
+    }
+
+    Some(ch)
+}
+
+pub fn char_range(descriptor: &String, skip_control_characters: bool) -> Result<Vec<char>, ParseError> {
     let descriptor = descriptor.replace(';', ",");
-    let mut result = Vec::<u32>::new();
+    let mut result = Vec::<char>::new();
     for item in descriptor.split(',') {
         let range = item.split_once('-');
 
         // The current item is a single character code (e.g. 0x60), not a range.
         if range.is_none() {
-            let ch = parse_single_charcode(item.trim());
-            result.push(ch?);
+            let char_code = parse_single_charcode(item.trim())?;
+            let ch = parse_char(char_code, skip_control_characters);
+
+            if ch.is_some() {
+                result.push(ch.unwrap());
+            }
             continue;
         }
 
@@ -47,8 +73,11 @@ pub fn char_range(descriptor: &String) -> Result<Vec<u32>, ParseError> {
         let start = parse_single_charcode(range_segments.0)?;
         let end = parse_single_charcode(range_segments.1)?;
 
-        for ch in start..end {
-            result.push(ch);
+        for char_code in start..end {
+            let ch = parse_char(char_code, skip_control_characters);
+            if ch.is_some() {
+                result.push(ch.unwrap());
+            }
         }
     }
     Ok(result)
