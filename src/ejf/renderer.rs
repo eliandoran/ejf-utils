@@ -3,6 +3,8 @@ use core::{cmp::max};
 use image::{DynamicImage, ImageBuffer};
 use freetype::{Face, Bitmap, face::LoadFlag};
 
+const DEBUG: bool = false;
+
 pub struct RenderConfig {
     pub total_height: u32,
     pub left_spacing: u8,
@@ -34,16 +36,32 @@ pub fn get_pixels(bitmap: Bitmap, config: RenderConfig, offset_y: i32) -> Dynami
     image 
 }
 
-pub fn render_single_character(face: &Face, ch: char, config: RenderConfig) -> DynamicImage {
+pub fn render_single_character(face: &Face, ch: char, config: RenderConfig) -> DynamicImage {    
     // Try to render a single character.
     face.load_char(ch as usize, LoadFlag::RENDER)
         .expect("Unable to load one of the characters for rendering.");
 
     let glyph = face.glyph();
+    let metrics = glyph.metrics();
+    let left_bearing = (metrics.horiBearingX >> 6) as i32;
+    let right_bearing =
+        (metrics.horiAdvance - metrics.horiBearingX - metrics.width) >> 6;
+
+    let left_spacing = max(0, left_bearing) as u8;
+    let right_spacing = max(0, right_bearing) as u8;
+
+    if DEBUG {
+        println!("{} -> leftBearing={}, rightBearing={}, spacing=({}, {})", ch, left_bearing, right_bearing, left_spacing, right_spacing);
+    }
 
     // Get the pixels of that single character.
     let offset_y = config.max_ascent as i32 - (glyph.bitmap_top() as i32);
-    let img = get_pixels(glyph.bitmap(), config, offset_y);    
+    let img = get_pixels(glyph.bitmap(), RenderConfig {
+        left_spacing,
+        right_spacing,
+        max_ascent: config.max_ascent,
+        total_height: config.total_height
+    }, offset_y);    
 
     img
 }
