@@ -3,7 +3,7 @@ use freetype::{Library, Face};
 use image::ImageFormat;
 use indicatif::ProgressBar;
 use serde::{Serialize, Deserialize};
-use self::{header::HeaderInfo, metrics::determine_metrics_from_font};
+use self::{header::HeaderInfo, metrics::determine_metrics_from_font, renderer::RenderConfig};
 
 use super::char_range;
 
@@ -16,6 +16,8 @@ use std::{fs::File, io::{Write, Cursor}, path::Path};
 pub use crate::ejf::errors::Error;
 
 const DEFAULT_DPI: u32 = 72;
+const DEFAULT_LEFT_SPACING: u8 = 0;
+const DEFAULT_RIGHT_SPACING: u8 = 1;
 const PRINT_CHARACTERS: bool = false;
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -25,7 +27,9 @@ pub struct EjfConfig {
     pub size: u32,
     pub char_range: String,
     pub skip_control_characters: bool,
-    pub dpi: Option<u32>
+    pub dpi: Option<u32>,
+    pub left_spacing: Option<u8>,
+    pub right_spacing: Option<u8>
 }
 
 pub struct EjfResult {
@@ -71,7 +75,12 @@ pub fn build_ejf(config: &EjfConfig) -> Result<EjfResult, Error> {
         .compression_method(CompressionMethod::Stored);
     
     for ch in &chars {
-        let image = renderer::render_single_character(&face, *ch, image_height, metrics.ascent);
+        let image = renderer::render_single_character(&face, *ch, RenderConfig {
+            left_spacing: config.left_spacing.unwrap_or(DEFAULT_LEFT_SPACING),
+            right_spacing: config.right_spacing.unwrap_or(DEFAULT_RIGHT_SPACING),
+            max_ascent: metrics.ascent,
+            total_height: image_height
+        });
         let mut cursor = Cursor::new(Vec::new());
 
         if PRINT_CHARACTERS {

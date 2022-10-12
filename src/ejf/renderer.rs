@@ -3,19 +3,28 @@ use core::{cmp::max};
 use image::{DynamicImage, ImageBuffer};
 use freetype::{Face, Bitmap, face::LoadFlag};
 
-pub fn get_pixels(bitmap: Bitmap, image_height: u32, offset_y: i32) -> DynamicImage {    
-    let width = bitmap.width() as usize;
-    let image_width = max(1, width as u32); // 0px width images are not allowed.
+pub struct RenderConfig {
+    pub total_height: u32,
+    pub left_spacing: u8,
+    pub right_spacing: u8,
+    pub max_ascent: u16
+}
+
+pub fn get_pixels(bitmap: Bitmap, config: RenderConfig, offset_y: i32) -> DynamicImage {    
+    let char_width = bitmap.width() as usize;
+    let image_height = config.total_height;
+    let image_width = (config.left_spacing as u32) + (char_width as u32) + (config.right_spacing as u32);
+    let image_width = max(1, image_width); // 0px width images are not allowed.
+    let offset_x = config.left_spacing as i32;
     let mut figure = ImageBuffer::new(image_width, image_height);
     
-    for cx in 0..width {
+    for cx in 0..char_width {
         for cy in 0..bitmap.rows() as usize {
-            let pos = (cy) * width + (cx);
-            let pixel = [ bitmap.buffer()[pos] ];
-
+            let pixel = [ bitmap.buffer()[cy * char_width + cx] ];
+            let dest_x = cx as i32 + offset_x;
             let dest_y = cy as i32 + offset_y;
             if dest_y >= 0 && dest_y < image_height as i32 {
-                figure[(cx as u32, dest_y as u32)] = image::Luma(pixel);
+                figure[(dest_x as u32, dest_y as u32)] = image::Luma(pixel);
             }
         }
     }
@@ -25,7 +34,7 @@ pub fn get_pixels(bitmap: Bitmap, image_height: u32, offset_y: i32) -> DynamicIm
     image 
 }
 
-pub fn render_single_character(face: &Face, ch: char, image_height: u32, max_ascent: u16) -> DynamicImage {
+pub fn render_single_character(face: &Face, ch: char, config: RenderConfig) -> DynamicImage {
     // Try to render a single character.
     face.load_char(ch as usize, LoadFlag::RENDER)
         .expect("Unable to load one of the characters for rendering.");
@@ -33,8 +42,8 @@ pub fn render_single_character(face: &Face, ch: char, image_height: u32, max_asc
     let glyph = face.glyph();
 
     // Get the pixels of that single character.
-    let offset_y = max_ascent as i32 - (glyph.bitmap_top() as i32);
-    let img = get_pixels(glyph.bitmap(), image_height, offset_y);    
+    let offset_y = config.max_ascent as i32 - (glyph.bitmap_top() as i32);
+    let img = get_pixels(glyph.bitmap(), config, offset_y);    
 
     img
 }
