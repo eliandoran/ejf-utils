@@ -42,11 +42,11 @@ fn get_font_name(output_name: &String) -> Result<String, Error> {
     }
 }
 
-pub fn build_ejf(config: EjfConfig) -> Result<EjfResult, Error> {
+pub fn build_ejf(config: &EjfConfig) -> Result<EjfResult, Error> {
     let font_name = get_font_name(&config.output)?;
 
     // Parse the character range from the config.
-    let chars = char_range(config.char_range)?;
+    let chars = char_range(&config.char_range)?;
 
     // Open the output file
     let zip_file = File::create(&config.output)?;
@@ -54,7 +54,7 @@ pub fn build_ejf(config: EjfConfig) -> Result<EjfResult, Error> {
 
     // Try to open the font.
     let library = Library::init()?;
-    let face: Face = library.new_face(config.input, 0)?;
+    let face: Face = library.new_face(&config.input, 0)?;
 
     // Set face properties.
     let char_width = config.size as isize * 64;

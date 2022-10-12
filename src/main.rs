@@ -32,14 +32,14 @@ fn generate_fonts(config_path: String) {
     }
 
     for font in config.unwrap().font {
-        let result = build_ejf(font);
+        let result = build_ejf(&font);
     
         let message: String = match result {
             Ok(result) => format!("{}: height={}px", result.name, result.height),
             Err(error) => match error {
                 Error::FreeTypeError(_) => "Unable to initialize FreeType.".to_string(),
                 Error::ImageError(_) => "Unable to generate the image files for one or more characters.".to_string(),
-                Error::IoError(_) => "Unable to read or write the .ejf file.".to_string(),
+                Error::IoError(e) => format!("Unable to read or write the .ejf file at '{}': {}", &font.output, e.to_string()),
                 Error::MetricsError => "Unable to determine the metrics for one or more characters.".to_string(),
                 Error::XmlWriterError(_) => "Unable to write the header XML file.".to_string(),
                 Error::ZipWriterError(_) => "Unable to file the ZIP file (.ejf).".to_string(),

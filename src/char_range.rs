@@ -29,7 +29,7 @@ pub fn parse_single_charcode(char_code: &str) -> Result<u32, ParseError> {
     Ok(result.unwrap())
 }
 
-pub fn char_range(descriptor: String) -> Result<Vec<u32>, ParseError> {
+pub fn char_range(descriptor: &String) -> Result<Vec<u32>, ParseError> {
     let descriptor = descriptor.replace(';', ",");
     let mut result = Vec::<u32>::new();
     for item in descriptor.split(',') {
