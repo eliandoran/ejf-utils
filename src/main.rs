@@ -16,7 +16,14 @@ fn print_usage() {
 }
 
 fn generate_fonts(config_path: String) {
-    let file_data = fs::read_to_string(config_path).unwrap();
+    let file_data = fs::read_to_string(&config_path);
+
+    if file_data.is_err() {
+        println!("Unable to open the configuration file at '{}'.\nPlease check that the input file exists and is accessible.", &config_path);
+        exit(2);
+    }
+
+    let file_data = file_data.unwrap();
     let config: Result<Config, toml::de::Error> = toml::from_str(&file_data);
 
     if config.is_err() {
