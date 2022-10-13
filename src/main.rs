@@ -5,7 +5,7 @@ use serde::{Deserialize};
 mod ejf;
 mod char_range;
 use char_range::char_range;
-use ejf::{EjfConfig, Error, build_ejf, EjfResult};
+use ejf::{EjfConfig, Error, build_ejf, EjfResult, get_font_name};
 
 #[derive(Debug, Deserialize)]
 struct Config {
@@ -52,7 +52,9 @@ fn generate_fonts(config_path: String) {
     // Change the working directory.
     chdir(config_path);
 
-    let spinner_style = ProgressStyle::with_template("{prefix:.bold.dim} {wide_bar} {pos}/{len}").unwrap().tick_chars("⠁⠂⠄⡀⢀⠠⠐⠈ ");
+    let spinner_style_progress = ProgressStyle::with_template("{prefix:32.bold.dim} {wide_bar:.cyan/blue} {pos:>5}/{len}").unwrap().tick_chars("⠁⠂⠄⡀⢀⠠⠐⠈ ");
+    let spinner_style_done = ProgressStyle::with_template("{prefix:32.bold.dim} {msg}").unwrap();
+
     let fonts = config.unwrap().font;
     let num_fonts = fonts.len();
     let progress = MultiProgress::new();
@@ -60,9 +62,11 @@ fn generate_fonts(config_path: String) {
     let mut i = 0;
     for font in fonts {
         i += 1;
+        let name = get_font_name(&font.output).unwrap_or_default();
         let pb = progress.add(ProgressBar::new(0));
-        pb.set_style(spinner_style.clone());
-        pb.set_prefix(format!("[{}/{}]: {}", i, num_fonts, font.input));        
+        let style_done = spinner_style_done.clone();
+        pb.set_style(spinner_style_progress.clone());
+        pb.set_prefix(format!("[{}/{}] {}", i, num_fonts, name.to_string()));
 
         threads.push(thread::spawn(move || {            
             let result = build_ejf(&font,  | progress | {
@@ -70,12 +74,13 @@ fn generate_fonts(config_path: String) {
                 pb.set_position(progress.0 as u64);                
             });
 
-            let status = match result {
-                Ok(_) => "Done",
-                Err(_) => "Failed"
+            let status = match &result {
+                Ok(result) => format!("Done, height: {}px.", &result.height),
+                Err(_) => "Failed.".to_string()
             };
 
-            pb.finish_with_message(status);
+            pb.set_style(style_done);
+            pb.finish_with_message(format!("{}", status));
 
             ThreadData {
                 input: font.input,
@@ -109,6 +114,8 @@ fn generate_fonts(config_path: String) {
 }
 
 fn main() {    
+    println!("EJF Font Generator\n");
+
     match args().nth(1) {
         Some(config_path) => generate_fonts(config_path),
         None => print_usage()

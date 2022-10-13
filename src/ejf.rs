@@ -38,7 +38,7 @@ pub struct EjfResult {
 }
 
 /// Determine font name (same as the path, minus extension).
-fn get_font_name(output_name: &String) -> Result<String, Error> {
+pub fn get_font_name(output_name: &String) -> Result<String, Error> {
     let path = Path::new(output_name);
     match path.file_stem() {
         Some(path) => Ok(path.to_string_lossy().to_string()),
