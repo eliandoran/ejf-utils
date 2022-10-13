@@ -1,5 +1,5 @@
 use std::{fs, process::exit, env::{args, set_current_dir}, path::Path, thread::{self, JoinHandle}};
-use indicatif::{MultiProgress, ProgressBar};
+use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
 use serde::{Deserialize};
 
 mod ejf;
@@ -52,15 +52,31 @@ fn generate_fonts(config_path: String) {
     // Change the working directory.
     chdir(config_path);
 
+    let spinner_style = ProgressStyle::with_template("{prefix:.bold.dim} {wide_bar} {pos}/{len}").unwrap().tick_chars("⠁⠂⠄⡀⢀⠠⠐⠈ ");
+    let fonts = config.unwrap().font;
+    let num_fonts = fonts.len();
     let progress = MultiProgress::new();
     let mut threads: Vec<JoinHandle<ThreadData>> = Vec::new();
-    for font in config.unwrap().font {
+    let mut i = 0;
+    for font in fonts {
+        i += 1;
         let pb = progress.add(ProgressBar::new(0));
+        pb.set_style(spinner_style.clone());
+        pb.set_prefix(format!("[{}/{}]: {}", i, num_fonts, font.input));        
+
         threads.push(thread::spawn(move || {            
             let result = build_ejf(&font,  | progress | {
                 pb.set_length(progress.1 as u64);
-                pb.set_position(progress.0 as u64);
+                pb.set_position(progress.0 as u64);                
             });
+
+            let status = match result {
+                Ok(_) => "Done",
+                Err(_) => "Failed"
+            };
+
+            pb.finish_with_message(status);
+
             ThreadData {
                 input: font.input,
                 output: font.output,
@@ -72,9 +88,9 @@ fn generate_fonts(config_path: String) {
     for thread in threads {
         let data = thread.join().unwrap();
 
-        let message: String = match data.result {
-            Ok(result) => format!("{}: height={}px", result.name, result.height),
-            Err(error) => match error {
+        let message: Option<String> = match data.result {
+            Ok(_) => None,
+            Err(error) => Some(match error {
                 Error::FreeTypeError(_) => "Unable to initialize FreeType.".to_string(),
                 Error::ImageError(_) => "Unable to generate the image files for one or more characters.".to_string(),
                 Error::IoError(e) => format!("Unable to read or write the .ejf file at '{}': {}", &data.output, e.to_string()),
@@ -83,10 +99,12 @@ fn generate_fonts(config_path: String) {
                 Error::ZipWriterError(_) => "Unable to file the ZIP file (.ejf).".to_string(),
                 Error::RangeParseError(e) => format!("Unable to parse the given character range: {}", e.message),
                 Error::NameError => "Unable to determine the name of the resulting font (.ejf) based on the path.".to_string()
-            }
+            })
         };
     
-        println!("{}", message);
+        if message.is_some() {
+            println!("{}: {}", data.input, message.unwrap());
+        }
     }
 }
 
