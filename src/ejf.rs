@@ -46,7 +46,9 @@ fn get_font_name(output_name: &String) -> Result<String, Error> {
     }
 }
 
-pub fn build_ejf(config: &EjfConfig) -> Result<EjfResult, Error> {
+pub fn build_ejf<F>(config: &EjfConfig, progress_callback: F) -> Result<EjfResult, Error>
+    where F: Fn((i32, i32))
+{
     let font_name = get_font_name(&config.output)?;
 
     // Parse the character range from the config.
@@ -74,6 +76,7 @@ pub fn build_ejf(config: &EjfConfig) -> Result<EjfResult, Error> {
     let zip_options = FileOptions::default()
         .compression_method(CompressionMethod::Stored);
     
+    let mut num_processed = 0;
     for ch in &chars {
         let image = renderer::render_single_character(&face, *ch, RenderConfig {
             left_spacing: config.left_spacing.unwrap_or(DEFAULT_LEFT_SPACING),
@@ -99,7 +102,8 @@ pub fn build_ejf(config: &EjfConfig) -> Result<EjfResult, Error> {
         zip.start_file(format!("design_{}", &char_code), zip_options)?;
         zip.write(&image_data)?;
 
-        bar.inc(1);
+        num_processed += 1;
+        progress_callback((num_processed, chars.len() as i32));
     }    
 
     // Write the header

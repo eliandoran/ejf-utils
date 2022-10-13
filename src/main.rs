@@ -1,4 +1,5 @@
 use std::{fs, process::exit, env::{args, set_current_dir}, path::Path, thread::{self, JoinHandle}};
+use indicatif::{MultiProgress, ProgressBar};
 use serde::{Deserialize};
 
 mod ejf;
@@ -51,11 +52,15 @@ fn generate_fonts(config_path: String) {
     // Change the working directory.
     chdir(config_path);
 
-
+    let progress = MultiProgress::new();
     let mut threads: Vec<JoinHandle<ThreadData>> = Vec::new();
     for font in config.unwrap().font {
-        threads.push(thread::spawn(move || {
-            let result = build_ejf(&font);
+        let pb = progress.add(ProgressBar::new(0));
+        threads.push(thread::spawn(move || {            
+            let result = build_ejf(&font,  | progress | {
+                pb.set_length(progress.1 as u64);
+                pb.set_position(progress.0 as u64);
+            });
             ThreadData {
                 input: font.input,
                 output: font.output,
