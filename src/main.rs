@@ -1,14 +1,20 @@
-use std::{fs, process::exit, env::{args, set_current_dir}, path::Path};
+use std::{fs, process::exit, env::{args, set_current_dir}, path::Path, thread::{self, JoinHandle}};
 use serde::{Deserialize};
 
 mod ejf;
 mod char_range;
 use char_range::char_range;
-use ejf::{EjfConfig, Error, build_ejf};
+use ejf::{EjfConfig, Error, build_ejf, EjfResult};
 
 #[derive(Debug, Deserialize)]
 struct Config {
     font: Vec<EjfConfig>
+}
+
+struct ThreadData {
+    input: String,
+    output: String,
+    result: Result<EjfResult, Error>
 }
 
 fn print_usage() {
@@ -45,16 +51,28 @@ fn generate_fonts(config_path: String) {
     // Change the working directory.
     chdir(config_path);
 
-    // Generate each font.
+
+    let mut threads: Vec<JoinHandle<ThreadData>> = Vec::new();
     for font in config.unwrap().font {
-        let result = build_ejf(&font);
-    
-        let message: String = match result {
+        threads.push(thread::spawn(move || {
+            let result = build_ejf(&font);
+            ThreadData {
+                input: font.input,
+                output: font.output,
+                result
+            }
+        }));
+    }
+
+    for thread in threads {
+        let data = thread.join().unwrap();
+
+        let message: String = match data.result {
             Ok(result) => format!("{}: height={}px", result.name, result.height),
             Err(error) => match error {
                 Error::FreeTypeError(_) => "Unable to initialize FreeType.".to_string(),
                 Error::ImageError(_) => "Unable to generate the image files for one or more characters.".to_string(),
-                Error::IoError(e) => format!("Unable to read or write the .ejf file at '{}': {}", &font.output, e.to_string()),
+                Error::IoError(e) => format!("Unable to read or write the .ejf file at '{}': {}", &data.output, e.to_string()),
                 Error::MetricsError => "Unable to determine the metrics for one or more characters.".to_string(),
                 Error::XmlWriterError(_) => "Unable to write the header XML file.".to_string(),
                 Error::ZipWriterError(_) => "Unable to file the ZIP file (.ejf).".to_string(),
