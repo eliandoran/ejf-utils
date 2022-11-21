@@ -1,7 +1,6 @@
 use binstall_zip::{ZipWriter, write::FileOptions, CompressionMethod};
 use freetype::{Library, Face};
 use image::ImageFormat;
-use indicatif::ProgressBar;
 use serde::{Serialize, Deserialize};
 use self::{header::HeaderInfo, metrics::determine_metrics_from_font, renderer::RenderConfig};
 
@@ -72,7 +71,6 @@ pub fn build_ejf<F>(config: &EjfConfig, progress_callback: F) -> Result<EjfResul
     let image_height = metrics.height;
 
     // Render the characters.
-    let bar = ProgressBar::new(chars.len() as u64);
     let zip_options = FileOptions::default()
         .compression_method(CompressionMethod::Stored);
     
