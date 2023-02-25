@@ -11,5 +11,6 @@ in {
     cargoLock = {
       lockFile = ./Cargo.lock;
     };
+    nativeBuildInputs = with pkgs; [ cmake ];
   };
 }
