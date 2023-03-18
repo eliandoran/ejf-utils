@@ -1,5 +1,5 @@
 use quick_xml::Error as XmlError;
-use binstall_zip::result::ZipError;
+use zip::result::ZipError;
 use std::io::Error as IoError;
 use image::ImageError;
 use freetype::Error as FreeTypeError;

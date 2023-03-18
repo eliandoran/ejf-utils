@@ -1,4 +1,4 @@
-use binstall_zip::{ZipWriter, write::FileOptions, CompressionMethod};
+use zip::{ZipWriter, write::FileOptions, CompressionMethod};
 use freetype::{Library, Face};
 use image::ImageFormat;
 use serde::{Serialize, Deserialize};

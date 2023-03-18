@@ -11,6 +11,6 @@ viuer = "0.6"
 image = "0.24.4"
 indicatif = "0.17.1"
 quick-xml = "0.23.0"
-binstall-zip = { version = "0.6.3", default-features = false }
+zip = { version = "0.6.4", default-features = false }
 toml = "0.5.9"
 serde = { version = "1.0", features = ["derive"] }
