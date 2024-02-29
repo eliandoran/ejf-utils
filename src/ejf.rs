@@ -26,6 +26,7 @@ pub struct EjfConfig {
     pub size: u32,
     pub char_range: String,
     pub skip_control_characters: bool,
+    pub add_null_character: Option<bool>,
     pub dpi: Option<u32>,
     pub left_spacing: Option<u8>,
     pub right_spacing: Option<u8>
@@ -51,7 +52,7 @@ pub fn build_ejf<F>(config: &EjfConfig, progress_callback: F) -> Result<EjfResul
     let font_name = get_font_name(&config.output)?;
 
     // Parse the character range from the config.
-    let chars = char_range(&config.char_range, config.skip_control_characters)?;
+    let chars = char_range(&config.char_range, config.skip_control_characters, config.add_null_character)?;
 
     // Open the output file
     let zip_file = File::create(&config.output)?;

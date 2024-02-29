@@ -51,9 +51,17 @@ pub fn parse_char(char_code: u32, skip_control_characters: bool) -> Option<char>
     Some(ch)
 }
 
-pub fn char_range(descriptor: &String, skip_control_characters: bool) -> Result<Vec<char>, ParseError> {
+pub fn char_range(descriptor: &String, skip_control_characters: bool, add_null_character: Option<bool>) -> Result<Vec<char>, ParseError> {
     let descriptor = descriptor.replace(';', ",");
     let mut result = Vec::<char>::new();
+
+    if add_null_character.unwrap_or_default() {
+        let ch = parse_char(0x00, false);
+        if ch.is_some() {
+            result.push(ch.unwrap());
+        }
+    }
+
     for item in descriptor.split(',') {
         let range = item.split_once('-');
 
