@@ -25,6 +25,7 @@ pub struct EjfConfig {
     pub output: String,
     pub size: u32,
     pub char_range: String,
+    pub ignore_char_range: Option<String>,
     pub skip_control_characters: bool,
     pub add_null_character: Option<bool>,
     pub dpi: Option<u32>,
@@ -46,13 +47,29 @@ pub fn get_font_name(output_name: &String) -> Result<String, Error> {
     }
 }
 
+pub fn build_char_list(config: &EjfConfig) -> Result<Vec<char>, Error> {
+    let all_chars = char_range(&config.char_range, config.skip_control_characters, config.add_null_character)?;
+    let ignored_chars = if config.ignore_char_range.is_some() {
+        char_range(&config.ignore_char_range.clone().unwrap(), false, Some(false))?
+    } else { Vec::new() };
+
+    let mut result: Vec<char> = Vec::new();
+    for ch in all_chars {
+        if !ignored_chars.contains(&ch) {
+            result.push(ch);
+        }
+    }
+
+    Ok(result)
+}
+
 pub fn build_ejf<F>(config: &EjfConfig, progress_callback: F) -> Result<EjfResult, Error>
     where F: Fn((i32, i32))
 {
     let font_name = get_font_name(&config.output)?;
 
     // Parse the character range from the config.
-    let chars = char_range(&config.char_range, config.skip_control_characters, config.add_null_character)?;
+    let chars = build_char_list(&config)?;
 
     // Open the output file
     let zip_file = File::create(&config.output)?;
