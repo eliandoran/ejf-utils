@@ -1,5 +1,5 @@
 use viuer::Config;
-use core::{cmp::max};
+use core::{cmp::max, cmp::min};
 use image::{DynamicImage, ImageBuffer};
 use freetype::{Face, Bitmap, face::LoadFlag};
 
@@ -9,13 +9,16 @@ pub struct RenderConfig {
     pub total_height: u32,
     pub left_spacing: u8,
     pub right_spacing: u8,
-    pub max_ascent: u16
+    pub max_ascent: u16,
 }
 
-pub fn get_pixels(bitmap: Bitmap, config: RenderConfig, offset_y: i32) -> DynamicImage {    
-    let char_width = bitmap.width() as usize;
+pub fn get_pixels(bitmap: Bitmap, config: RenderConfig, offset_y: i32, max_width: Option<usize>) -> DynamicImage {    
+    let char_width = if max_width.is_none() { bitmap.width() as usize } else { max_width.unwrap() };
     let image_height = config.total_height;
-    let image_width = (config.left_spacing as u32) + (char_width as u32) + (config.right_spacing as u32);
+    let mut image_width = (config.left_spacing as u32) + (char_width as u32) + (config.right_spacing as u32);
+    if max_width.is_some() {
+        image_width = min(image_width, max_width.unwrap().try_into().unwrap())
+    }
     let image_width = max(1, image_width); // 0px width images are not allowed.
     let offset_x = config.left_spacing as i32;
     let mut figure = ImageBuffer::new(image_width, image_height);
@@ -56,12 +59,13 @@ pub fn render_single_character(face: &Face, ch: char, config: RenderConfig) -> D
 
     // Get the pixels of that single character.
     let offset_y = config.max_ascent as i32 - (glyph.bitmap_top() as i32);
+    let max_width = if ch == char::from_u32(0x00).unwrap() { Option::Some(1) } else { Option::None }; 
     let img = get_pixels(glyph.bitmap(), RenderConfig {
         left_spacing,
         right_spacing,
         max_ascent: config.max_ascent,
         total_height: config.total_height
-    }, offset_y);    
+    }, offset_y, max_width);    
 
     img
 }
