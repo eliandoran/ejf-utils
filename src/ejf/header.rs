@@ -3,7 +3,8 @@ use quick_xml::{Writer, Error};
 pub struct HeaderInfo {
     pub chars: Vec<char>,
     pub height: u32,
-    pub name: String
+    pub name: String,
+    pub space_width: u32
 }
 
 fn write_informations(writer: &mut Writer<Vec<u8>>) -> Result<(), Error> {

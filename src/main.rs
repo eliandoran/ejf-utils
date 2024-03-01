@@ -75,7 +75,7 @@ fn generate_fonts(config_path: String) {
             });
 
             let status = match &result {
-                Ok(result) => format!("Done, height: {}px.", &result.height),
+                Ok(result) => format!("Done, height: {}px, space width: {}px", &result.height, &result.space_width),
                 Err(_) => "Failed.".to_string()
             };
 

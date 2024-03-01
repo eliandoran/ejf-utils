@@ -35,7 +35,8 @@ pub struct EjfConfig {
 
 pub struct EjfResult {
     pub height: u32,
-    pub name: String
+    pub name: String,
+    pub space_width: u32
 }
 
 /// Determine font name (same as the path, minus extension).
@@ -91,15 +92,16 @@ pub fn build_ejf<F>(config: &EjfConfig, progress_callback: F) -> Result<EjfResul
     // Render the characters.
     let zip_options = FileOptions::default()
         .compression_method(CompressionMethod::Stored);
-    
+    let render_config = RenderConfig {
+        left_spacing: config.left_spacing.unwrap_or(DEFAULT_LEFT_SPACING),
+        right_spacing: config.right_spacing.unwrap_or(DEFAULT_RIGHT_SPACING),
+        max_ascent: metrics.ascent,
+        total_height: image_height
+    };
+
     let mut num_processed = 0;
     for ch in &chars {
-        let image = renderer::render_single_character(&face, *ch, RenderConfig {
-            left_spacing: config.left_spacing.unwrap_or(DEFAULT_LEFT_SPACING),
-            right_spacing: config.right_spacing.unwrap_or(DEFAULT_RIGHT_SPACING),
-            max_ascent: metrics.ascent,
-            total_height: image_height
-        });
+        let image = renderer::render_single_character(&face, *ch, &render_config);
         let mut cursor = Cursor::new(Vec::new());
 
         if PRINT_CHARACTERS {
@@ -123,10 +125,12 @@ pub fn build_ejf<F>(config: &EjfConfig, progress_callback: F) -> Result<EjfResul
     }    
 
     // Write the header
+    let space_width = renderer::get_char_width(&face, ' ', &render_config);
     let header = header::write_header(HeaderInfo {
         chars: chars,
         height: image_height,
-        name: font_name.to_string()
+        name: font_name.to_string(),
+        space_width
     })?;
     zip.start_file("Header", zip_options)?;
     zip.write(&header)?;
@@ -134,6 +138,7 @@ pub fn build_ejf<F>(config: &EjfConfig, progress_callback: F) -> Result<EjfResul
 
     Ok(EjfResult {
         height: image_height,
-        name: font_name.to_string()
+        name: font_name.to_string(),
+        space_width
     })
 }

@@ -39,7 +39,7 @@ pub fn get_pixels(bitmap: Bitmap, config: RenderConfig, offset_y: i32, max_width
     image 
 }
 
-pub fn render_single_character(face: &Face, ch: char, config: RenderConfig) -> DynamicImage {    
+pub fn render_single_character(face: &Face, ch: char, config: &RenderConfig) -> DynamicImage {    
     // Try to render a single character.
     face.load_char(ch as usize, LoadFlag::RENDER)
         .expect("Unable to load one of the characters for rendering.");
@@ -68,6 +68,10 @@ pub fn render_single_character(face: &Face, ch: char, config: RenderConfig) -> D
     }, offset_y, max_width);    
 
     img
+}
+
+pub fn get_char_width(face: &Face, ch: char, config: &RenderConfig) -> u32 {
+    render_single_character(&face, ch, config).width()
 }
 
 pub fn print_character(img: &DynamicImage) {
