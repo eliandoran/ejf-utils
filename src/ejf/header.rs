@@ -26,7 +26,7 @@ fn write_font_properties(writer: &mut Writer<Vec<u8>>, data: &HeaderInfo) -> Res
             ("Filter", ""),
             ("Height", data.height.to_string().as_str()),
             ("Name", data.name.as_str()),
-            ("Space", "5"),
+            ("Space", data.space_width.to_string().as_str()),
             ("Style", "p"),
             ("Width", "-1")
         ])
