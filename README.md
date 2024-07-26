@@ -25,6 +25,8 @@ Each font can have the following options:
 <dd>The size of the font to generate. The font size is passed to the freetype library directly as the <code>char_width</code> to the <a href="https://freetype.org/freetype2/docs/reference/ft2-sizing_and_scaling.html#ft_set_char_size"><code>FT_Set_Char_Size</code></a> method. The definition for the value is "The nominal width, in 26.6 fractional points.".</dd>
 <dt><code>skip_control_characters</code></dt>
 <dd>Set to <code>true</code> in order to not embed control characters, that is characters that are not meant to be displayed. This can help reduce the amount of unwanted characters in the font, that only increase the memory consumption of the file. These characters are determined to the <a href="https://www.unicode.org/versions/latest/">Unicode Standard</a>, defined as the code points with the general category of <code>Cc</code>.</dd>
+<dt><code>add_null_character</code></dt>
+<dd>The MicroUI font engine always uses the first character in a font if it cannot find a particular character. This can sometimes be inconvienient and it is preferable to not display any character at all. To do so, set this value to <code>true</code> which will generate a NULL character (0x00) with a fixed width of 1px.</dd>
 <dt><code>dpi</code></dt>
 <dd>The DPI (dots per inch) value to pass to the freetype library as the <code>vert_resolution</code> when calling the <code>FT_Set_Char_Size</code> method.</dd>
 </dl>
