@@ -14,21 +14,23 @@ pub struct RenderConfig {
 
 pub fn get_pixels(bitmap: Bitmap, config: RenderConfig, offset_y: i32, max_width: Option<usize>) -> DynamicImage {    
     let char_width = if max_width.is_none() { bitmap.width() as usize } else { max_width.unwrap() };
-    let image_height = config.total_height;
-    let mut image_width = (config.left_spacing as u32) + (char_width as u32) + (config.right_spacing as u32);
+    let image_height = config.total_height as i32;
+
+    let mut image_width: i32 = (config.left_spacing as i32) + (char_width as i32) + (config.right_spacing as i32);
     if max_width.is_some() {
         image_width = min(image_width, max_width.unwrap().try_into().unwrap())
     }
-    let image_width = max(1, image_width); // 0px width images are not allowed.
+    let image_width: i32 = max(1, image_width); // 0px width images are not allowed.
     let offset_x = config.left_spacing as i32;
-    let mut figure = ImageBuffer::new(image_width, image_height);
+    let mut figure = ImageBuffer::new(image_width as u32, image_height as u32);
     
     for cx in 0..char_width {
         for cy in 0..bitmap.rows() as usize {
             let pixel = [ bitmap.buffer()[cy * char_width + cx] ];
             let dest_x = cx as i32 + offset_x;
             let dest_y = cy as i32 + offset_y;
-            if dest_y >= 0 && dest_y < image_height as i32 {
+
+            if dest_x < image_width && dest_y >= 0 && dest_y < image_height {
                 figure[(dest_x as u32, dest_y as u32)] = image::Luma(pixel);
             }
         }
@@ -54,7 +56,7 @@ pub fn render_single_character(face: &Face, ch: char, config: &RenderConfig) -> 
     let right_spacing = max(0, right_bearing) as u8;
 
     if DEBUG {
-        println!("{} -> leftBearing={}, rightBearing={}, spacing=({}, {})", ch, left_bearing, right_bearing, left_spacing, right_spacing);
+        println!("{} -> leftBearing={}, rightBearing={}, spacing=({}, {})", (ch as i32), left_bearing, right_bearing, left_spacing, right_spacing);
     }
 
     // Get the pixels of that single character.
