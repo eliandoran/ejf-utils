@@ -1,3 +1,6 @@
+> [!IMPORTANT]
+> The tool has been deprecated in favor of [ejf-utils-2], which is a TypeScript rewrite of the same tool using the same underlying library, but adding more features such as support for composite fonts (adding two or more fonts into the same .ejf file).
+
 # EJF Generator
 
 Generates .ejf font files for the MicroUI embedded platform. For more information about how fonts are handled at MicroUI level, see [Fonts on MicroEJ Developers](https://docs.microej.com/en/latest/ApplicationDeveloperGuide/UI/MicroUI/fonts.html).
